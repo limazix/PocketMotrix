@@ -347,10 +347,11 @@ int id action_menu_presenter 0x7f090006
 int id action_mode_bar 0x7f09002e
 int id action_mode_bar_stub 0x7f09002d
 int id action_mode_close_button 0x7f090020
-int id action_settings 0x7f09003f
+int id action_settings 0x7f090041
 int id activity_chooser_view_content 0x7f090021
 int id always 0x7f090014
 int id beginning 0x7f09001b
+int id caption_text 0x7f09003f
 int id checkbox 0x7f090029
 int id collapseActionView 0x7f090015
 int id decor_content_parent 0x7f09002f
@@ -376,6 +377,7 @@ int id normal 0x7f09000b
 int id progress_circular 0x7f090007
 int id progress_horizontal 0x7f090008
 int id radio 0x7f09002b
+int id result_text 0x7f090040
 int id search_badge 0x7f090035
 int id search_bar 0x7f090034
 int id search_button 0x7f090036
@@ -443,7 +445,14 @@ int string abc_shareactionprovider_share_with_application 0x7f0a000e
 int string abc_toolbar_collapse_description 0x7f0a0004
 int string action_settings 0x7f0a0012
 int string app_name 0x7f0a0010
+int string digits_caption 0x7f0a0017
+int string forecast_caption 0x7f0a0018
 int string hello_world 0x7f0a0011
+int string kws_caption 0x7f0a0015
+int string menu_caption 0x7f0a0016
+int string phone_caption 0x7f0a0019
+int string start 0x7f0a0013
+int string stop 0x7f0a0014
 int style AppBaseTheme 0x7f0b00eb
 int style AppTheme 0x7f0b00ec
 int style Base_TextAppearance_AppCompat 0x7f0b0098

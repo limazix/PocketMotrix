@@ -8,9 +8,25 @@
     android:paddingTop="@dimen/activity_vertical_margin"
     tools:context="br.ufrj.pee.pocketmotrix.PocketMotrixActivity" >
 
-    <TextView
+        <TextView
+        android:id="@+id/caption_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/hello_world" />
+        android:layout_gravity="center_horizontal"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:typeface="sans" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:gravity="center" >
+
+        <TextView
+            android:id="@+id/result_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceMedium" />
+    </LinearLayout>
 
 </RelativeLayout>
