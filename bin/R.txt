@@ -445,11 +445,13 @@ int string abc_shareactionprovider_share_with_application 0x7f0b000e
 int string abc_toolbar_collapse_description 0x7f0b0004
 int string action_settings 0x7f0b0012
 int string app_name 0x7f0b0010
+int string checked 0x7f0b001a
 int string digits_caption 0x7f0b0017
 int string forecast_caption 0x7f0b0018
 int string hello_world 0x7f0b0011
 int string kws_caption 0x7f0b0015
 int string menu_caption 0x7f0b0016
+int string not_checked 0x7f0b001b
 int string phone_caption 0x7f0b0019
 int string start 0x7f0b0013
 int string stop 0x7f0b0014

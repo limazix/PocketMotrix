@@ -43,7 +43,7 @@ public class PocketMotrixActivity extends ActionBarActivity implements Recogniti
     
     @ViewById(R.id.result_text)
     TextView resultText;
-    
+   
     @AfterViews
     public void afterViews() {
 
