@@ -14,7 +14,7 @@ public class PocketMotrixService extends AccessibilityService {
 	private static final String TAG = PocketMotrixService_.class.getName();
 	
 	@Bean
-	TTSEngine mTTS;
+	TTSEngine mTTSEngine;
 	
 	@Override
 	public void onServiceConnected() {
