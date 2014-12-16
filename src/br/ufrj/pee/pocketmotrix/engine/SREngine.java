@@ -40,7 +40,6 @@ public class SREngine extends Observable implements RecognitionListener {
 	@RootContext
 	Context context;
 	
-	//@AfterInject
 	public void setupEngine() {
         // Prepare the data for UI
         captions = new HashMap<String, Integer>();
