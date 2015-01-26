@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.Observable;
 
 import org.androidannotations.annotations.EBean;
+import org.androidannotations.annotations.EBean.Scope;
 import org.androidannotations.annotations.RootContext;
 
 import android.content.Context;
@@ -19,17 +20,15 @@ import edu.cmu.pocketsphinx.Hypothesis;
 import edu.cmu.pocketsphinx.RecognitionListener;
 import edu.cmu.pocketsphinx.SpeechRecognizer;
 
-@EBean
+@EBean(scope = Scope.Singleton)
 public class SREngine extends Observable implements RecognitionListener {
 
 	private static final String TAG = SREngine_.class.getName();
 	
 	private static final String KWS_SEARCH = "wakeup";
-    private static final String FORECAST_SEARCH = "forecast";
-    private static final String DIGITS_SEARCH = "digits";
-    private static final String PHONE_SEARCH = "phones";
-    private static final String MENU_SEARCH = "menu";
     private static final String KEYPHRASE = "oh mighty computer";
+    private static final String NAVIGATION_SEARCH = "navigation";
+	private static final String DEACTIVATE_SEARCH = "stop listening";
 
     private SpeechRecognizer recognizer;
     private HashMap<String, Integer> captions;
@@ -44,10 +43,7 @@ public class SREngine extends Observable implements RecognitionListener {
         // Prepare the data for UI
         captions = new HashMap<String, Integer>();
         captions.put(KWS_SEARCH, R.string.kws_caption);
-        captions.put(MENU_SEARCH, R.string.menu_caption);
-        captions.put(DIGITS_SEARCH, R.string.digits_caption);
-        captions.put(PHONE_SEARCH, R.string.phone_caption);
-        captions.put(FORECAST_SEARCH, R.string.forecast_caption);
+        captions.put(NAVIGATION_SEARCH, R.string.navigation_caption);
         
         Log.i(TAG, "Preparing the recognizer");
         setCaptionText("Preparing the recognizer");
@@ -76,6 +72,12 @@ public class SREngine extends Observable implements RecognitionListener {
             }
         }.execute();
     }
+	
+	public void finishEngine() {
+		Log.i(TAG, "Shutdown");
+//		recognizer.cancel();
+//		recognizer.shutdown();
+	}
 
     @Override
     public void onPartialResult(Hypothesis hypothesis) {
@@ -83,25 +85,34 @@ public class SREngine extends Observable implements RecognitionListener {
     	    return;
 
         String text = hypothesis.getHypstr();
-        if (text.equals(KEYPHRASE))
-            switchSearch(MENU_SEARCH);
-        else if (text.equals(DIGITS_SEARCH))
-            switchSearch(DIGITS_SEARCH);
-        else if (text.equals(PHONE_SEARCH))
-            switchSearch(PHONE_SEARCH);
-        else if (text.equals(FORECAST_SEARCH))
-            switchSearch(FORECAST_SEARCH);
-        else {
-        	setResultText(text);
-            Log.i(TAG, "parcial: " + text);
-        }
+        
+		if (text.equals(DEACTIVATE_SEARCH))
+			switchSearch(KWS_SEARCH);
+		else if (text.equals(KEYPHRASE))
+			switchSearch(NAVIGATION_SEARCH);
+		else
+			Log.i(TAG, "parcial result: " + text);
     }
 
     @Override
     public void onResult(Hypothesis hypothesis) {
         if (hypothesis != null) {
             String text = hypothesis.getHypstr();
-            setResultText("");
+
+            /** 
+             * Workaround to force the engine to keep listening after the speech ends
+             * TODO: Redesign the SpeechRecognition class of Pocketsphinx lib to use
+             * Segment and SegmentIterator instead Hypothesis.
+             * See https://code.google.com/p/cjoycap/source/browse/trunk/cjoycap/WinMMTest1/VoiceRecognizer.cpp
+             */ 
+            if(KWS_SEARCH.equals(recognizer.getSearchName()) && !DEACTIVATE_SEARCH.equals(text))
+    			switchSearch(NAVIGATION_SEARCH);
+    		
+    		if(!DEACTIVATE_SEARCH.equals(text) || 
+    				!KWS_SEARCH.equals(recognizer.getSearchName()) || 
+    					!KEYPHRASE.equals(text)) {
+    			setResultText(text);
+    		}
             Log.i(TAG, "result: " + text);
         }
     }
@@ -114,12 +125,14 @@ public class SREngine extends Observable implements RecognitionListener {
     public void onEndOfSpeech() {
         if (!recognizer.getSearchName().equals(KWS_SEARCH))
             switchSearch(KWS_SEARCH);
+		
+        Log.d(TAG, "============END============");
     }
 
     private void switchSearch(String searchName) {
         recognizer.stop();
         
-        // If we are not spotting, start listening with timeout
+//         If we are not spotting, start listening with timeout
         if (searchName.equals(KWS_SEARCH))
             recognizer.startListening(searchName);
         else
@@ -135,40 +148,33 @@ public class SREngine extends Observable implements RecognitionListener {
         // of different kind and switch between them
         
         File modelsDir = new File(assetsDir, "models");
-        recognizer = defaultSetup()
-                .setAcousticModel(new File(modelsDir, "hmm/en-us-semi"))
-                .setDictionary(new File(modelsDir, "dict/cmu07a.dic"))
-                
-                // To disable logging of raw audio comment out this call (takes a lot of space on the device)
-                .setRawLogDir(assetsDir)
-                
-                // Threshold to tune for keyphrase
-                .setKeywordThreshold(1e-40f)
-                
-                // Use context-independent phonetic search, context-dependent is too slow for mobile
-                .setBoolean("-allphone_ci", true)
-                
-                .getRecognizer();
+        try {
+			recognizer = defaultSetup()
+			        .setAcousticModel(new File(modelsDir, "hmm/en-us-semi"))
+			        .setDictionary(new File(modelsDir, "dict/cmu07a.dic"))
+			        
+			        // To disable logging of raw audio comment out this call (takes a lot of space on the device)
+			        .setRawLogDir(assetsDir)
+			        
+			        // Threshold to tune for keyphrase
+			        .setKeywordThreshold(1e-40f)
+			        
+			        // Use context-independent phonetic search, context-dependent is too slow for mobile
+			        .setBoolean("-allphone_ci", true)
+			        
+			        .getRecognizer();
+		} catch (IOException e) {
+			Log.e(TAG, e.getMessage());
+		}
         recognizer.addListener(this);
 
         // Create keyword-activation search.
         recognizer.addKeyphraseSearch(KWS_SEARCH, KEYPHRASE);
         
         // Create grammar-based search for selection between demos
-        File menuGrammar = new File(modelsDir, "grammar/menu.gram");
-        recognizer.addGrammarSearch(MENU_SEARCH, menuGrammar);
+        File navigationGrammar = new File(modelsDir, "grammar/navigation.gram");
+        recognizer.addGrammarSearch(NAVIGATION_SEARCH, navigationGrammar);
 
-        // Create grammar-based search for digit recognition
-        File digitsGrammar = new File(modelsDir, "grammar/digits.gram");
-        recognizer.addGrammarSearch(DIGITS_SEARCH, digitsGrammar);
-        
-        // Create language model search
-        File languageModel = new File(modelsDir, "lm/weather.dmp");
-        recognizer.addNgramSearch(FORECAST_SEARCH, languageModel);
-        
-        // Phonetic search
-        File phoneticModel = new File(modelsDir, "phone/en-phone.dmp");
-        recognizer.addAllphoneSearch(PHONE_SEARCH, phoneticModel);
     }
 
     @Override
@@ -188,8 +194,6 @@ public class SREngine extends Observable implements RecognitionListener {
 
 	public void setCaptionText(String captionText) {
 		this.captionText = captionText;
-		setChanged();
-		notifyObservers();
 	}
 
 	public String getResultText() {
@@ -199,7 +203,7 @@ public class SREngine extends Observable implements RecognitionListener {
 	public void setResultText(String resultText) {
 		this.resultText = resultText;
 		setChanged();
-		notifyObservers();
+		notifyObservers(resultText);
 	}
 
 }

@@ -1,0 +1,11 @@
+#JSGF V1.0;
+
+grammar navigation;
+
+<home> =  go (home | back);
+
+<active> =  stop listening;
+
+<volume> = quieter | louder;
+
+public <command> = <home> | <active> | <volume>;
