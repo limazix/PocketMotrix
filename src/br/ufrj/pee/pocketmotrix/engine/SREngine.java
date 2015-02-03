@@ -108,8 +108,8 @@ public class SREngine extends Observable implements RecognitionListener {
             if(KWS_SEARCH.equals(recognizer.getSearchName()) && !DEACTIVATE_SEARCH.equals(text))
     			switchSearch(NAVIGATION_SEARCH);
     		
-    		if(!DEACTIVATE_SEARCH.equals(text) || 
-    				!KWS_SEARCH.equals(recognizer.getSearchName()) || 
+    		if(!DEACTIVATE_SEARCH.equals(text) && 
+    				!KWS_SEARCH.equals(recognizer.getSearchName()) && 
     					!KEYPHRASE.equals(text)) {
     			setResultText(text);
     		}

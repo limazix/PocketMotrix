@@ -16,4 +16,6 @@
     <string name="checked">is completed</string>
     <string name="not_checked">is not completed</string>
     
+    <string name="shield_disconnected">Tecla Shield Disconnected</string>
+    
 </resources>

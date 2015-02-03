@@ -2,7 +2,7 @@
 
 grammar navigation;
 
-<home> =  go (home | back);
+<home> =  go (home | back | right | next);
 
 <active> =  stop listening;
 
