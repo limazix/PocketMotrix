@@ -24,169 +24,168 @@ import edu.cmu.pocketsphinx.SpeechRecognizer;
 public class SREngine extends Observable implements RecognitionListener {
 
 	private static final String TAG = SREngine_.class.getName();
-	
+
 	private static final String KWS_SEARCH = "wakeup";
-    private static final String KEYPHRASE = "oh mighty computer";
-    private static final String NAVIGATION_SEARCH = "navigation";
+	private static final String KEYPHRASE = "start listening";
+	private static final String NAVIGATION_SEARCH = "navigation";
 	private static final String DEACTIVATE_SEARCH = "stop listening";
 
-    private SpeechRecognizer recognizer;
-    private HashMap<String, Integer> captions;
-   
-    private String captionText = "";
-    private String resultText = "";
-	
+	private SpeechRecognizer recognizer;
+	private HashMap<String, Integer> captions;
+
+	private String captionText = "";
+	private String resultText = "";
+
 	@RootContext
 	Context context;
-	
+
 	public void setupEngine() {
-        // Prepare the data for UI
-        captions = new HashMap<String, Integer>();
-        captions.put(KWS_SEARCH, R.string.kws_caption);
-        captions.put(NAVIGATION_SEARCH, R.string.navigation_caption);
-        
-        Log.i(TAG, "Preparing the recognizer");
-        setCaptionText("Preparing the recognizer");
+		// Prepare the data for UI
+		captions = new HashMap<String, Integer>();
+		captions.put(KWS_SEARCH, R.string.kws_caption);
+		captions.put(NAVIGATION_SEARCH, R.string.navigation_caption);
 
-        new AsyncTask<Void, Void, Exception>() {
-            @Override
-            protected Exception doInBackground(Void... params) {
-                try {
-                    Assets assets = new Assets(context);
-                    File assetDir = assets.syncAssets();
-                    setupRecognizer(assetDir);
-                } catch (IOException e) {
-                    return e;
-                }
-                return null;
-            }
+		Log.i(TAG, "Preparing the recognizer");
+		setCaptionText("Preparing the recognizer");
 
-            @Override
-            protected void onPostExecute(Exception result) {
-                if (result != null) {
-                	setCaptionText("Failed to init recognizer " + result);
-                    Log.e(TAG, "Failed to init recognizer " + result);
-                } else {
-                    switchSearch(KWS_SEARCH);
-                }
-            }
-        }.execute();
-    }
-	
-	public void finishEngine() {
-		Log.i(TAG, "Shutdown");
-//		recognizer.cancel();
-//		recognizer.shutdown();
+		new AsyncTask<Void, Void, Exception>() {
+			@Override
+			protected Exception doInBackground(Void... params) {
+				try {
+					Assets assets = new Assets(context);
+					File assetDir = assets.syncAssets();
+					setupRecognizer(assetDir);
+				} catch (IOException e) {
+					return e;
+				}
+				return null;
+			}
+
+			@Override
+			protected void onPostExecute(Exception result) {
+				if (result != null) {
+					setCaptionText("Failed to init recognizer " + result);
+					Log.e(TAG, "Failed to init recognizer " + result);
+				} else {
+					switchSearch(KWS_SEARCH);
+				}
+			}
+		}.execute();
 	}
 
-    @Override
-    public void onPartialResult(Hypothesis hypothesis) {
-        if (hypothesis == null)
-    	    return;
+	public void finishEngine() {
+		Log.i(TAG, "Shutdown");
+		// recognizer.cancel();
+		// recognizer.shutdown();
+	}
 
-        String text = hypothesis.getHypstr();
-        
+	@Override
+	public void onPartialResult(Hypothesis hypothesis) {
+		if (hypothesis == null)
+			return;
+
+		String text = hypothesis.getHypstr();
+
 		if (text.equals(DEACTIVATE_SEARCH))
 			switchSearch(KWS_SEARCH);
 		else if (text.equals(KEYPHRASE))
 			switchSearch(NAVIGATION_SEARCH);
 		else
 			Log.i(TAG, "parcial result: " + text);
-    }
+	}
 
-    @Override
-    public void onResult(Hypothesis hypothesis) {
-        if (hypothesis != null) {
-            String text = hypothesis.getHypstr();
+	@Override
+	public void onResult(Hypothesis hypothesis) {
+		if (hypothesis != null) {
+			String text = hypothesis.getHypstr();
 
-            /** 
-             * Workaround to force the engine to keep listening after the speech ends
-             * TODO: Redesign the SpeechRecognition class of Pocketsphinx lib to use
-             * Segment and SegmentIterator instead Hypothesis.
-             * See https://code.google.com/p/cjoycap/source/browse/trunk/cjoycap/WinMMTest1/VoiceRecognizer.cpp
-             */ 
-            if(KWS_SEARCH.equals(recognizer.getSearchName()) && !DEACTIVATE_SEARCH.equals(text))
-    			switchSearch(NAVIGATION_SEARCH);
-    		
-    		if(!DEACTIVATE_SEARCH.equals(text) && 
-    				!KWS_SEARCH.equals(recognizer.getSearchName()) && 
-    					!KEYPHRASE.equals(text)) {
-    			setResultText(text);
-    		}
-            Log.i(TAG, "result: " + text);
-        }
-    }
+			/**
+			 * Workaround to force the engine to keep listening after the speech
+			 * ends TODO: Redesign the SpeechRecognition class of Pocketsphinx
+			 * lib to use Segment and SegmentIterator instead Hypothesis. See
+			 * https://code.google.com/p/cjoycap/source/browse/trunk/cjoycap/
+			 * WinMMTest1/VoiceRecognizer.cpp
+			 */
+			if (KWS_SEARCH.equals(recognizer.getSearchName())
+					&& !DEACTIVATE_SEARCH.equals(text))
+				switchSearch(NAVIGATION_SEARCH);
 
-    @Override
-    public void onBeginningOfSpeech() {
-    }
+			setResultText(text);
 
-    @Override
-    public void onEndOfSpeech() {
-        if (!recognizer.getSearchName().equals(KWS_SEARCH))
-            switchSearch(KWS_SEARCH);
-		
-        Log.d(TAG, "============END============");
-    }
+			Log.i(TAG, "result: " + text);
+		}
+	}
 
-    private void switchSearch(String searchName) {
-        recognizer.stop();
-        
-//         If we are not spotting, start listening with timeout
-        if (searchName.equals(KWS_SEARCH))
-            recognizer.startListening(searchName);
-        else
-            recognizer.startListening(searchName, 10000);
+	@Override
+	public void onBeginningOfSpeech() {
+	}
 
-        String caption = context.getString(captions.get(searchName));
-    	setCaptionText(caption);
-        Log.i(TAG, "caption: " + caption);
-    }
+	@Override
+	public void onEndOfSpeech() {
+		if (!recognizer.getSearchName().equals(KWS_SEARCH))
+			switchSearch(KWS_SEARCH);
+	}
 
-    private void setupRecognizer(File assetsDir) {
-        // The recognizer can be configured to perform multiple searches
-        // of different kind and switch between them
-        
-        File modelsDir = new File(assetsDir, "models");
-        try {
+	private void switchSearch(String searchName) {
+		recognizer.stop();
+
+		// If we are not spotting, start listening with timeout
+		if (searchName.equals(KWS_SEARCH))
+			recognizer.startListening(searchName);
+		else
+			recognizer.startListening(searchName, 10000);
+
+		String caption = context.getString(captions.get(searchName));
+		setCaptionText(caption);
+		Log.i(TAG, "caption: " + caption);
+	}
+
+	private void setupRecognizer(File assetsDir) {
+		// The recognizer can be configured to perform multiple searches
+		// of different kind and switch between them
+
+		File modelsDir = new File(assetsDir, "models");
+		try {
 			recognizer = defaultSetup()
-			        .setAcousticModel(new File(modelsDir, "hmm/en-us-semi"))
-			        .setDictionary(new File(modelsDir, "dict/cmu07a.dic"))
-			        
-			        // To disable logging of raw audio comment out this call (takes a lot of space on the device)
-			        .setRawLogDir(assetsDir)
-			        
-			        // Threshold to tune for keyphrase
-			        .setKeywordThreshold(1e-40f)
-			        
-			        // Use context-independent phonetic search, context-dependent is too slow for mobile
-			        .setBoolean("-allphone_ci", true)
-			        
-			        .getRecognizer();
+					.setAcousticModel(new File(modelsDir, "hmm/en-us-semi"))
+					.setDictionary(new File(modelsDir, "dict/cmu07a.dic"))
+
+					// To disable logging of raw audio comment out this call
+					// (takes a lot of space on the device)
+					.setRawLogDir(assetsDir)
+
+					// Threshold to tune for keyphrase
+					.setKeywordThreshold(1e-40f)
+
+					// Use context-independent phonetic search,
+					// context-dependent is too slow for mobile
+					.setBoolean("-allphone_ci", true)
+
+					.getRecognizer();
 		} catch (IOException e) {
 			Log.e(TAG, e.getMessage());
 		}
-        recognizer.addListener(this);
+		recognizer.addListener(this);
 
-        // Create keyword-activation search.
-        recognizer.addKeyphraseSearch(KWS_SEARCH, KEYPHRASE);
-        
-        // Create grammar-based search for selection between demos
-        File navigationGrammar = new File(modelsDir, "grammar/navigation.gram");
-        recognizer.addGrammarSearch(NAVIGATION_SEARCH, navigationGrammar);
+		// Create keyword-activation search.
+		recognizer.addKeyphraseSearch(KWS_SEARCH, KEYPHRASE);
 
-    }
+		// Create grammar-based search for selection between demos
+		File navigationGrammar = new File(modelsDir, "grammar/navigation.gram");
+		recognizer.addGrammarSearch(NAVIGATION_SEARCH, navigationGrammar);
 
-    @Override
-    public void onError(Exception error) {
-    	setCaptionText(error.getMessage());
-    	Log.e(TAG, "============" + error.getMessage() + "============");
-    }
+	}
 
-    @Override
-    public void onTimeout() {
-        switchSearch(KWS_SEARCH);
-    }
+	@Override
+	public void onError(Exception error) {
+		setCaptionText(error.getMessage());
+		Log.e(TAG, "============" + error.getMessage() + "============");
+	}
+
+	@Override
+	public void onTimeout() {
+		switchSearch(KWS_SEARCH);
+	}
 
 	public String getCaptionText() {
 		return captionText;

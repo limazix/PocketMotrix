@@ -4,8 +4,12 @@ grammar navigation;
 
 <home> =  go (home | back | right | next);
 
+<direction> = up | right | down | left;
+
 <active> =  stop listening;
 
 <volume> = quieter | louder;
 
-public <command> = <home> | <active> | <volume>;
+<action> = enter | <active> | <volume>;
+
+public <command> = <home> | <direction> | <action>;

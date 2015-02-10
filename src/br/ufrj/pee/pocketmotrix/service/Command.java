@@ -1,7 +1,8 @@
 package br.ufrj.pee.pocketmotrix.service;
 
 public enum Command {
-	UNKNOWN("unknown"), GO_HOME("gohome"), GO_BACK("goback"), GO_RIGHT("goright"),
+	UNKNOWN("unknown"), GO_HOME("gohome"), GO_BACK("goback"), 
+	RIGHT("right"), LEFT("left"), UP("up"), DOWN("down"), ENTER("enter"),
 	GO_NEXT("gonext"), QUIETER("quieter"), LOUDER("louder");
 
     private final String label;
