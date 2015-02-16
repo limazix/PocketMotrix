@@ -2,14 +2,14 @@
 
 grammar navigation;
 
-<home> =  go (home | back | right | next);
+<global> =  go (home | back | right | left);
 
 <direction> = up | right | down | left;
 
 <active> =  stop listening;
 
-<volume> = quieter | louder;
+<volume> = quieter | louder | mute;
 
 <action> = enter | <active> | <volume>;
 
-public <command> = <home> | <direction> | <action>;
+public <command> = <global> | <direction> | <action>;

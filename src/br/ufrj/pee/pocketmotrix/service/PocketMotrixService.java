@@ -8,6 +8,7 @@ import java.util.Queue;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.androidannotations.annotations.AfterInject;
+import org.androidannotations.annotations.Background;
 import org.androidannotations.annotations.Bean;
 import org.androidannotations.annotations.EService;
 
@@ -33,10 +34,11 @@ public class PocketMotrixService extends AccessibilityService implements
 	private AudioManager audioManager;
 
 	protected static ReentrantLock mActionLock;
-	
+
 	private OverlayHighlighter mHighlighter;
-	
-	protected AccessibilityNodeInfo mSelectedNode;
+
+	private AccessibilityNodeInfo focusedNode;
+	private AccessibilityNodeInfo rootWindowNode;
 
 	private ArrayList<AccessibilityNodeInfo> mActiveNodes;
 
@@ -49,20 +51,19 @@ public class PocketMotrixService extends AccessibilityService implements
 	@Override
 	public void onCreate() {
 		Log.i(TAG, "PocketMotrixService Created");
-		
+
 		init();
 	}
-	
+
 	private void init() {
 		mActiveNodes = new ArrayList<AccessibilityNodeInfo>();
 		mActionLock = new ReentrantLock();
-		
-		mHighlighter = new OverlayHighlighter(this);
 
 		context = getApplicationContext();
-		audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+		audioManager = (AudioManager) context
+				.getSystemService(Context.AUDIO_SERVICE);
 	}
-	
+
 	private void showHighlighter() {
 		if (mHighlighter != null) {
 			if (!mHighlighter.isVisible()) {
@@ -70,7 +71,7 @@ public class PocketMotrixService extends AccessibilityService implements
 			}
 		}
 	}
-	
+
 	private void hideHighlighter() {
 		if (mHighlighter != null) {
 			if (mHighlighter.isVisible()) {
@@ -78,15 +79,17 @@ public class PocketMotrixService extends AccessibilityService implements
 			}
 		}
 	}
-	
+
 	public void setFocusedNode(AccessibilityNodeInfo focusedNode) {
+		AccessibilityNodeInfo oldNode = this.focusedNode;
 		this.focusedNode = focusedNode;
+		if(oldNode != null) oldNode.recycle();
 		this.focusedNode.performAction(AccessibilityNodeInfo.ACTION_FOCUS);
 	}
-	
+
 	@Override
 	public void onServiceConnected() {
-		super.onServiceConnected();		
+		super.onServiceConnected();
 		Log.i(TAG, "PocketMotrixService Connected");
 	}
 
@@ -104,80 +107,89 @@ public class PocketMotrixService extends AccessibilityService implements
 		if (node == null) {
 			return;
 		}
+
+		if (event_type != AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED) {
+			Log.d(TAG, AccessibilityEvent.eventTypeToString(event_type) + ": "
+					+ event.getText());
+		}
 		
-		Log.d(TAG, AccessibilityEvent.eventTypeToString(event_type) + ": " + event.getText());
-		
-		node = event.getSource();
-			if (event_type == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
-				setActiveNodes(node);
-			}
+		if (event_type == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
+			setActiveNodes(node);
+			rootWindowNode = node;
+		} else if(event_type == AccessibilityEvent.TYPE_VIEW_SCROLLED) {
+			// TODO Find a better way to avoid undesired views during transition
+			if(!event.getText().isEmpty()) setActiveNodes(node);
+		} else if(event_type == AccessibilityEvent.TYPE_VIEW_FOCUSED) {
+			if(!node.equals(focusedNode)) setFocusedNode(node);
+		}
+
 	}
-	
+
 	private void setActiveNodes(AccessibilityNodeInfo root) {
 		mActiveNodes.clear();
 		AccessibilityNodeInfo fNode = null;
 		Queue<AccessibilityNodeInfo> q = new LinkedList<AccessibilityNodeInfo>();
 		q.add(root);
-		
+
 		while (!q.isEmpty()) {
 			AccessibilityNodeInfo thisnode = q.poll();
-			if(thisnode == null) continue;
-			if(isActive(thisnode) && !thisnode.isScrollable()) {
+			if (thisnode == null)
+				continue;
+			if (isActive(thisnode)) {
 				mActiveNodes.add(thisnode);
-				if(thisnode.isFocused())
+				if (thisnode.isFocused())
 					fNode = thisnode;
 			}
-			for (int i=0; i<thisnode.getChildCount(); ++i) {
+			for (int i = 0; i < thisnode.getChildCount(); ++i) {
 				q.add(thisnode.getChild(i));
 			}
 		}
-		
-		if(fNode == null) setFocusedNode( mActiveNodes.get(0));
+
+		if (fNode == null && !mActiveNodes.isEmpty()) 
+			setFocusedNode(mActiveNodes.get(0));
 		else setFocusedNode(fNode);
-		
-	}	
-		
-	private AccessibilityNodeInfo focusedNode;
 
-
-	public void selectNode(int direction ) {
-		selectNode(focusedNode,  direction );
 	}
 
-	public void selectNode(AccessibilityNodeInfo refnode, int direction ) {
-		NodeSelectionThread thread = new NodeSelectionThread(this, refnode, direction);
-		thread.start();	
-	}
-	
-	protected class NodeSelectionThread extends Thread {
-		PocketMotrixService pms;
-		AccessibilityNodeInfo current_node;
-		int direction; 
-		public NodeSelectionThread(PocketMotrixService inst, AccessibilityNodeInfo node, int dir) {
-			pms = inst;
-			current_node = node;
-			direction = dir;
-		}
-		public void run() {
-			mActionLock.lock();
-			
-			AccessibilityNodeInfo nextNode = current_node.focusSearch(direction);
-			if(nextNode != null) {
-				pms.setFocusedNode(nextNode);
-			}
-			mActionLock.unlock();
-		}
+	public void selectNode(int direction) {
+		selectNode(focusedNode, direction);
 	}
 
+	@Background
+	public void selectNode(AccessibilityNodeInfo refnode, int direction) {
+		boolean isLocked = mActionLock.tryLock();
+		AccessibilityNodeInfo nextNode = refnode.focusSearch(direction);
+		if (nextNode != null) setFocusedNode(nextNode);
+		if(isLocked) mActionLock.unlock();
+	}
+
+	@Background
 	public void clickActiveNode() {
-		
 		focusedNode.performAction(AccessibilityNodeInfo.ACTION_CLICK);
-		if(mHighlighter.isVisible()) 
-			mHighlighter.clearHighlight();
+	}
+
+	public void scroll(int direction) {
+		scroll(focusedNode, direction);
+	}
+
+	@Background
+	public void scroll(AccessibilityNodeInfo node, int direction) {
+		boolean isLocked = mActionLock.tryLock();
+		
+		boolean actionPerformed = false;
+		
+		if (node.isScrollable() && node.isVisibleToUser()) {
+			actionPerformed = node.performAction(direction);
+		}
+		
+		if (actionPerformed || node.getParent() == null) return;
+		else scroll(node.getParent(), direction);
+		
+		if(isLocked) mActionLock.unlock();
 	}
 
 	private boolean isActive(AccessibilityNodeInfo node) {
-		return (node.isVisibleToUser() && node.isFocusable())? true:false;
+		return (node.isVisibleToUser() && node.isFocusable()) ? true : false;
 	}
 
 	@Override
@@ -213,6 +225,12 @@ public class PocketMotrixService extends AccessibilityService implements
 		case GO_BACK:
 			performGlobalAction(GLOBAL_ACTION_BACK);
 			break;
+		case GO_RIGHT:
+			scroll(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD);
+			break;
+		case GO_LEFT:
+			scroll(AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD);
+			break;
 		case ENTER:
 			clickActiveNode();
 			break;
@@ -246,7 +264,7 @@ public class PocketMotrixService extends AccessibilityService implements
 	@Override
 	public void onInterrupt() {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 }
