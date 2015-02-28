@@ -2,7 +2,7 @@
 
 grammar navigation;
 
-<global> =  go (home | back | right | left);
+<global> =  go (home | back | right | down | left | up);
 
 <direction> = up | right | down | left;
 

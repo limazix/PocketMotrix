@@ -15,8 +15,11 @@ import org.androidannotations.annotations.EService;
 import android.accessibilityservice.AccessibilityService;
 import android.content.Context;
 import android.media.AudioManager;
+import android.os.PowerManager;
+import android.os.PowerManager.WakeLock;
 import android.util.Log;
 import android.view.View;
+import android.view.WindowManager;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 import br.ufrj.pee.pocketmotrix.engine.SREngine;
@@ -32,13 +35,14 @@ public class PocketMotrixService extends AccessibilityService implements
 
 	private Context context;
 	private AudioManager audioManager;
+	private PowerManager powerManager;
+	private WakeLock wakeLock;
 
 	protected static ReentrantLock mActionLock;
 
 	private OverlayHighlighter mHighlighter;
 
 	private AccessibilityNodeInfo focusedNode;
-	private AccessibilityNodeInfo rootWindowNode;
 
 	private ArrayList<AccessibilityNodeInfo> mActiveNodes;
 
@@ -62,6 +66,9 @@ public class PocketMotrixService extends AccessibilityService implements
 		context = getApplicationContext();
 		audioManager = (AudioManager) context
 				.getSystemService(Context.AUDIO_SERVICE);
+		powerManager = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
+		wakeLock = powerManager.newWakeLock(PowerManager.ACQUIRE_CAUSES_WAKEUP|PowerManager.FULL_WAKE_LOCK|PowerManager.ON_AFTER_RELEASE, TAG);
+		
 	}
 
 	private void showHighlighter() {
@@ -84,7 +91,8 @@ public class PocketMotrixService extends AccessibilityService implements
 		AccessibilityNodeInfo oldNode = this.focusedNode;
 		this.focusedNode = focusedNode;
 		if(oldNode != null) oldNode.recycle();
-		this.focusedNode.performAction(AccessibilityNodeInfo.ACTION_FOCUS);
+		if(this.focusedNode.isFocusable())
+			this.focusedNode.performAction(AccessibilityNodeInfo.ACTION_FOCUS);
 	}
 
 	@Override
@@ -115,12 +123,13 @@ public class PocketMotrixService extends AccessibilityService implements
 		
 		if (event_type == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
 			setActiveNodes(node);
-			rootWindowNode = node;
 		} else if(event_type == AccessibilityEvent.TYPE_VIEW_SCROLLED) {
 			// TODO Find a better way to avoid undesired views during transition
 			if(!event.getText().isEmpty()) setActiveNodes(node);
 		} else if(event_type == AccessibilityEvent.TYPE_VIEW_FOCUSED) {
 			if(!node.equals(focusedNode)) setFocusedNode(node);
+		} else if(event_type == AccessibilityEvent.TYPE_VIEW_SELECTED) {
+			Log.d(TAG, node.toString());
 		}
 
 	}
@@ -151,12 +160,12 @@ public class PocketMotrixService extends AccessibilityService implements
 
 	}
 
-	public void selectNode(int direction) {
-		selectNode(focusedNode, direction);
+	public void focusNode(int direction) {
+		focusNode(focusedNode, direction);
 	}
 
 	@Background
-	public void selectNode(AccessibilityNodeInfo refnode, int direction) {
+	public void focusNode(AccessibilityNodeInfo refnode, int direction) {
 		boolean isLocked = mActionLock.tryLock();
 		AccessibilityNodeInfo nextNode = refnode.focusSearch(direction);
 		if (nextNode != null) setFocusedNode(nextNode);
@@ -228,23 +237,29 @@ public class PocketMotrixService extends AccessibilityService implements
 		case GO_RIGHT:
 			scroll(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD);
 			break;
+		case GO_DOWN:
+			scroll(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD);
+			break;
 		case GO_LEFT:
+			scroll(AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD);
+			break;
+		case GO_UP:
 			scroll(AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD);
 			break;
 		case ENTER:
 			clickActiveNode();
 			break;
 		case RIGHT:
-			selectNode(View.FOCUS_RIGHT);
+			focusNode(View.FOCUS_RIGHT);
 			break;
 		case LEFT:
-			selectNode(View.FOCUS_LEFT);
+			focusNode(View.FOCUS_LEFT);
 			break;
 		case UP:
-			selectNode(View.FOCUS_UP);
+			focusNode(View.FOCUS_UP);
 			break;
 		case DOWN:
-			selectNode(View.FOCUS_DOWN);
+			focusNode(View.FOCUS_DOWN);
 			break;
 		case LOUDER:
 			audioManager.adjustVolume(AudioManager.ADJUST_RAISE,
@@ -254,11 +269,20 @@ public class PocketMotrixService extends AccessibilityService implements
 			audioManager.adjustVolume(AudioManager.ADJUST_LOWER,
 					AudioManager.FLAG_SHOW_UI | AudioManager.FLAG_PLAY_SOUND);
 			break;
-
+		case WAKE_OR_KEEP_WAKE:
+			wakeLock.acquire();
+			break;
+		case RELEASE_KEEP_WAKE:
+			if(wakeLock.isHeld()) wakeLock.release();
+			break;
 		default:
 			break;
 		}
 
+	}
+
+	private boolean isScreenOn() {
+		return powerManager.isScreenOn();
 	}
 
 	@Override
