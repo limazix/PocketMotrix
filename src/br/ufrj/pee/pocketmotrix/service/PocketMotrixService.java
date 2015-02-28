@@ -13,13 +13,17 @@ import org.androidannotations.annotations.Bean;
 import org.androidannotations.annotations.EService;
 
 import android.accessibilityservice.AccessibilityService;
+import android.app.KeyguardManager;
+import android.app.KeyguardManager.KeyguardLock;
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.media.AudioManager;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
 import android.util.Log;
 import android.view.View;
-import android.view.WindowManager;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 import br.ufrj.pee.pocketmotrix.engine.SREngine;
@@ -37,6 +41,8 @@ public class PocketMotrixService extends AccessibilityService implements
 	private AudioManager audioManager;
 	private PowerManager powerManager;
 	private WakeLock wakeLock;
+	private KeyguardLock keyguardLock;
+	private KeyguardManager keyguardManager;
 
 	protected static ReentrantLock mActionLock;
 
@@ -64,11 +70,17 @@ public class PocketMotrixService extends AccessibilityService implements
 		mActionLock = new ReentrantLock();
 
 		context = getApplicationContext();
+		
 		audioManager = (AudioManager) context
 				.getSystemService(Context.AUDIO_SERVICE);
+		
 		powerManager = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
 		wakeLock = powerManager.newWakeLock(PowerManager.ACQUIRE_CAUSES_WAKEUP|PowerManager.FULL_WAKE_LOCK|PowerManager.ON_AFTER_RELEASE, TAG);
 		
+		keyguardManager = (KeyguardManager) context.getSystemService(Context.KEYGUARD_SERVICE);
+		keyguardLock = keyguardManager.newKeyguardLock(TAG);
+		
+		registerReceiver(mReceiver, new IntentFilter(Intent.ACTION_SCREEN_OFF));
 	}
 
 	private void showHighlighter() {
@@ -270,6 +282,7 @@ public class PocketMotrixService extends AccessibilityService implements
 					AudioManager.FLAG_SHOW_UI | AudioManager.FLAG_PLAY_SOUND);
 			break;
 		case WAKE_OR_KEEP_WAKE:
+			keyguardLock.disableKeyguard();
 			wakeLock.acquire();
 			break;
 		case RELEASE_KEEP_WAKE:
@@ -281,14 +294,19 @@ public class PocketMotrixService extends AccessibilityService implements
 
 	}
 
-	private boolean isScreenOn() {
-		return powerManager.isScreenOn();
-	}
-
 	@Override
 	public void onInterrupt() {
 		// TODO Auto-generated method stub
 
 	}
+	
+	private BroadcastReceiver mReceiver = new BroadcastReceiver() {
+		
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			if(intent.getAction().equals(Intent.ACTION_SCREEN_OFF))
+				keyguardLock.reenableKeyguard();
+		}
+	}; 
 
 }
