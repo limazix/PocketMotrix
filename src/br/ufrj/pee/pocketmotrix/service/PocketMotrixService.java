@@ -1,6 +1,7 @@
 package br.ufrj.pee.pocketmotrix.service;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Observable;
 import java.util.Observer;
@@ -35,6 +36,20 @@ public class PocketMotrixService extends AccessibilityService implements
 
 	private static final String TAG = PocketMotrixService_.class.getName();
 
+	private final static HashMap<String, String> numbers = new HashMap<String, String>();
+	static {
+		numbers.put("one", "1");
+		numbers.put("two", "2");
+		numbers.put("three", "3");
+		numbers.put("four", "4");
+		numbers.put("five", "5");
+		numbers.put("six", "6");
+		numbers.put("seve", "7");
+		numbers.put("eight", "8");
+		numbers.put("nine", "9");
+		numbers.put("zero", "0");
+	};
+	
 	private Context context;
 	private AudioManager audioManager;
 	private PowerManager powerManager;
@@ -321,9 +336,12 @@ public class PocketMotrixService extends AccessibilityService implements
 		if (observable instanceof SREngine) {
 
 			mTTSEngine.speakToUser(mSREngine.getResultText());
-
+			
 			String cmd = mSREngine.getResultText().replaceAll("\\s", "");
-			execute(Command.get(cmd));
+			if(numbers.containsKey(cmd)) 
+				mBadges.filterBadges(numbers.get(cmd));
+			else
+				execute(Command.get(cmd));
 
 		} else if (observable instanceof TTSEngine) {
 			if (mTTSEngine.getIsInitialized())

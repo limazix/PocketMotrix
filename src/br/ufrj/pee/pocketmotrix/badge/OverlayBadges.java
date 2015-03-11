@@ -6,6 +6,7 @@ import java.util.HashMap;
 import org.androidannotations.annotations.EBean;
 
 import android.content.Context;
+import android.util.Log;
 import android.view.WindowManager;
 import android.view.accessibility.AccessibilityNodeInfo;
 import ca.idrc.tecla.framework.SimpleOverlay;
@@ -15,6 +16,7 @@ public class OverlayBadges extends SimpleOverlay {
 
 	public static final String TAG = OverlayBadges.class.getName();
 	
+	private String prefix = "";
 	private HashMap<String, BadgeView> badgesMap = new HashMap<String, BadgeView>();
 	
 	public OverlayBadges(Context context) {
@@ -44,9 +46,22 @@ public class OverlayBadges extends SimpleOverlay {
 		clearView();
 	}
 	
+	public void filterBadges(String filter) {
+		prefix += filter;
+		for(String key : badgesMap.keySet()) {
+			if(!key.startsWith(prefix)) {
+				BadgeView badgeView = badgesMap.get(key);
+				badgeView.clear();
+				badgeView.postInvalidate();
+				removeView(badgeView);
+			}
+		}
+	}
+	
 	public void addBadges(ArrayList<AccessibilityNodeInfo> nodes) {
 		clearBadges();
 		if(!nodes.isEmpty()) {
+			prefix = "";
 			int i = 1;
 			for(AccessibilityNodeInfo node : nodes) {
 				if(node != null) {

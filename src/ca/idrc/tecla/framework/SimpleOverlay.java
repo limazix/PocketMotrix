@@ -199,6 +199,10 @@ public class SimpleOverlay {
     public void clearView() {
     	mContentView.removeAllViews();
     }
+    
+    public void removeView(View content) {
+    	mContentView.removeView(content);
+    }
 
     /**
      * Returns the root {@link View} for this overlay. This is
