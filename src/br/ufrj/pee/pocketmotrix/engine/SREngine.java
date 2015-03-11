@@ -40,7 +40,6 @@ public class SREngine extends Observable implements RecognitionListener {
 	Context context;
 
 	public void setupEngine() {
-		// Prepare the data for UI
 		captions = new HashMap<String, Integer>();
 		captions.put(KWS_SEARCH, R.string.kws_caption);
 		captions.put(NAVIGATION_SEARCH, R.string.navigation_caption);
@@ -75,8 +74,8 @@ public class SREngine extends Observable implements RecognitionListener {
 
 	public void finishEngine() {
 		Log.i(TAG, "Shutdown");
-		// recognizer.cancel();
-		// recognizer.shutdown();
+		recognizer.cancel();
+		recognizer.shutdown();
 	}
 
 	@Override

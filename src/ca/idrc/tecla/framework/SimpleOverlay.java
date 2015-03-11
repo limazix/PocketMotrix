@@ -25,7 +25,7 @@ import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.view.WindowManager.LayoutParams;
 import android.view.accessibility.AccessibilityEvent;
-import android.widget.FrameLayout;
+import android.widget.RelativeLayout;
 
 /**
  * Provides a simple full-screen overlay. Behaves like a
@@ -50,7 +50,7 @@ public class SimpleOverlay {
     public SimpleOverlay(Context context) {
         mContext = context;
         mWindowManager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
-        mContentView = new SilentFrameLayout(context);
+        mContentView = new SilentRelativeLayout(context);
 
         mParams = new WindowManager.LayoutParams();
         mParams.type = WindowManager.LayoutParams.TYPE_SYSTEM_ALERT;
@@ -176,6 +176,29 @@ public class SimpleOverlay {
         mContentView.removeAllViews();
         mContentView.addView(content);
     }
+    
+    /**
+     * Inflates the specified resource ID and add it to view.
+     *
+     * @param layoutResId The layout ID of the view to add to view.
+     */
+    public void addContentView(int layoutResId) {
+        final LayoutInflater inflater = LayoutInflater.from(mContext);
+        inflater.inflate(layoutResId, mContentView);
+    }
+    
+    /**
+     * Sets the specified view as the content view.
+     *
+     * @param content The view to set as the content view.
+     */
+    public void addContentView(View content) {
+        mContentView.addView(content);
+    }
+    
+    public void clearView() {
+    	mContentView.removeAllViews();
+    }
 
     /**
      * Returns the root {@link View} for this overlay. This is
@@ -216,8 +239,8 @@ public class SimpleOverlay {
         public void onHide(SimpleOverlay overlay);
     }
 
-    private static class SilentFrameLayout extends FrameLayout {
-        public SilentFrameLayout(Context context) {
+    private static class SilentRelativeLayout extends RelativeLayout {
+        public SilentRelativeLayout(Context context) {
             super(context);
         }
 

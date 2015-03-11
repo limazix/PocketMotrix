@@ -10,6 +10,8 @@ grammar navigation;
 
 <volume> = quieter | louder | mute;
 
-<action> = enter | <active> | <volume>;
+<action> = enter | refresh | clear | <active> | <volume>;
 
-public <command> = <global> | <direction> | <action>;
+<numbers> = one | two | three | four | five | six | seven | eight | nine | zero;
+
+public <command> = <global> | <direction> | <action> | <numbers>;
