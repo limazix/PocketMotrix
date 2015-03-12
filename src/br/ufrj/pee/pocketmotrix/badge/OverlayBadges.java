@@ -1,6 +1,7 @@
 package br.ufrj.pee.pocketmotrix.badge;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 
 import org.androidannotations.annotations.EBean;
@@ -46,16 +47,21 @@ public class OverlayBadges extends SimpleOverlay {
 		clearView();
 	}
 	
-	public void filterBadges(String filter) {
+	public ArrayList<AccessibilityNodeInfo> filterBadges(String filter) {
 		prefix += filter;
+		ArrayList<AccessibilityNodeInfo> response = new ArrayList<AccessibilityNodeInfo>();
 		for(String key : badgesMap.keySet()) {
+			BadgeView badgeView = badgesMap.get(key);
 			if(!key.startsWith(prefix)) {
-				BadgeView badgeView = badgesMap.get(key);
 				badgeView.clear();
 				badgeView.postInvalidate();
 				removeView(badgeView);
+			} else {
+				response.add(badgeView.getNode());
 			}
 		}
+		
+		return response;
 	}
 	
 	public void addBadges(ArrayList<AccessibilityNodeInfo> nodes) {

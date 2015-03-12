@@ -121,4 +121,8 @@ public class BadgeView extends View {
 		this.label = label;
 	}
 	
+	public AccessibilityNodeInfo getNode() {
+		return node;
+	}
+	
 }
