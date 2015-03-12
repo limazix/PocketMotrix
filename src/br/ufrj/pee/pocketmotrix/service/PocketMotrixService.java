@@ -69,6 +69,9 @@ public class PocketMotrixService extends AccessibilityService implements
 	@Bean
 	TTSEngine mTTSEngine;
 
+	private boolean isScrolling = false;
+	private int direction;
+
 	@Override
 	public void onCreate() {
 		Log.i(TAG, "PocketMotrixService Created");
@@ -182,23 +185,39 @@ public class PocketMotrixService extends AccessibilityService implements
 	public void clickActiveNode(AccessibilityNodeInfo node) {
 		node.performAction(AccessibilityNodeInfo.ACTION_CLICK);
 	}
+	
+	private void getScrollables(AccessibilityNodeInfo node, ArrayList<AccessibilityNodeInfo> list) {
+		
+		if(node == null) return;
+		
+		AccessibilityNodeInfo current = AccessibilityNodeInfo.obtain(node);
+		
+		if(current.isVisibleToUser() && current.isScrollable())
+			list.add(current);
+		
+		for(int i = 0; i < current.getChildCount(); i++)
+			getScrollables(current.getChild(i), list);
+		
+	}
 
 	public void scroll(int direction) {
-		//scroll(focusedNode, direction);
+		ArrayList<AccessibilityNodeInfo> scrollables = new ArrayList<AccessibilityNodeInfo>();
+		getScrollables(rootNode, scrollables);
+		
+		if(scrollables.size() == 1)
+			scroll(scrollables.get(0), direction);
+		else if(scrollables.size() > 1) {
+			mBadges.addBadges(scrollables);
+			isScrolling  = true;
+			this.direction = direction;
+		}
 	}
 
 	@Background
 	public void scroll(AccessibilityNodeInfo node, int direction) {
 		boolean isLocked = mActionLock.tryLock();
 		
-		boolean actionPerformed = false;
-		
-		if (node.isScrollable() && node.isVisibleToUser()) {
-			actionPerformed = node.performAction(direction);
-		}
-		
-		if (actionPerformed || node.getParent() == null) return;
-		else scroll(node.getParent(), direction);
+		node.performAction(direction);
 		
 		if(isLocked) mActionLock.unlock();
 	}
@@ -341,7 +360,12 @@ public class PocketMotrixService extends AccessibilityService implements
 			
 			if(numbers.containsKey(cmd)) { 
 				ArrayList<AccessibilityNodeInfo> response = mBadges.filterBadges(numbers.get(cmd));
-				if(response.size() == 1) clickActiveNode(response.get(0));
+				if(response.size() == 1) {
+					if(isScrolling)
+						scroll(response.get(0), direction);
+					else
+						clickActiveNode(response.get(0));
+				}
 			} else execute(Command.get(cmd));
 			
 		} else if (observable instanceof TTSEngine) {
@@ -359,16 +383,24 @@ public class PocketMotrixService extends AccessibilityService implements
 		case GO_BACK:
 			performGlobalAction(GLOBAL_ACTION_BACK);
 			break;
-		case GO_RIGHT:
+			// TODO action has no effect
+		case POWER:
+			performGlobalAction(GLOBAL_ACTION_POWER_DIALOG);
+			break;
+		case NOTIFICATION:
+			performGlobalAction(GLOBAL_ACTION_NOTIFICATIONS);
+			break;
+			// TODO improve badges not updating after scroll
+		case HISTORY:
+			performGlobalAction(GLOBAL_ACTION_RECENTS);
+			break;
+		case SETTINGS:
+			performGlobalAction(GLOBAL_ACTION_QUICK_SETTINGS);
+			break;
+		case GO_FORWARD:
 			scroll(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD);
 			break;
-		case GO_DOWN:
-			scroll(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD);
-			break;
-		case GO_LEFT:
-			scroll(AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD);
-			break;
-		case GO_UP:
+		case GO_BACKWARD:
 			scroll(AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD);
 			break;
 		case LOUDER:
@@ -388,6 +420,7 @@ public class PocketMotrixService extends AccessibilityService implements
 			break;
 		case REFRESH:
 			updateBadgesView(rootNode);
+			break;
 		default:
 			break;
 		}
