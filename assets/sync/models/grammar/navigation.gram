@@ -8,9 +8,11 @@ grammar navigation;
 
 <activate> =  stop listening;
 
+<mode> = write;
+
 <volume> = quieter | louder | mute;
 
-<action> = refresh | clear | <activate> | <volume>;
+<action> = refresh | clear | <activate> | <mode> | <volume>;
 
 <numbers> = one | two | three | four | five | six | seven | eight | nine | zero;
 

@@ -29,10 +29,12 @@ public class SREngine extends Observable implements RecognitionListener {
 	private static final String KEYPHRASE = "start listening";
 	private static final String NAVIGATION_SEARCH = "navigation";
 	private static final String DEACTIVATE_SEARCH = "stop listening";
+	private static final String WRITE_SEARCH = "write";
 
 	private SpeechRecognizer recognizer;
 	private HashMap<String, Integer> captions;
 
+	private String currentSearch = "";
 	private String captionText = "";
 	private String resultText = "";
 
@@ -67,6 +69,7 @@ public class SREngine extends Observable implements RecognitionListener {
 					Log.e(TAG, "Failed to init recognizer " + result);
 				} else {
 					switchSearch(KWS_SEARCH);
+					currentSearch = KWS_SEARCH;
 				}
 			}
 		}.execute();
@@ -85,12 +88,17 @@ public class SREngine extends Observable implements RecognitionListener {
 
 		String text = hypothesis.getHypstr();
 
-		if (text.equals(DEACTIVATE_SEARCH))
+		if (text.equals(DEACTIVATE_SEARCH)) {
 			switchSearch(KWS_SEARCH);
-		else if (text.equals(KEYPHRASE))
+			currentSearch = KWS_SEARCH;
+		} else if (text.equals(KEYPHRASE) || text.contains(NAVIGATION_SEARCH)) {
 			switchSearch(NAVIGATION_SEARCH);
-		else
-			Log.i(TAG, "parcial result: " + text);
+			currentSearch = NAVIGATION_SEARCH;
+		} else if (text.equals(WRITE_SEARCH)) {
+			switchSearch(WRITE_SEARCH);
+			currentSearch = WRITE_SEARCH;
+		} else
+			Log.i(TAG, "parcial result: [" + currentSearch + "] " + text);
 	}
 
 	@Override
@@ -107,11 +115,11 @@ public class SREngine extends Observable implements RecognitionListener {
 			 */
 			if (KWS_SEARCH.equals(recognizer.getSearchName())
 					&& !DEACTIVATE_SEARCH.equals(text))
-				switchSearch(NAVIGATION_SEARCH);
+				switchSearch(currentSearch);
 
 			setResultText(text);
 
-			Log.i(TAG, "result: " + text);
+			Log.i(TAG, "[SEARCH] result: [" + currentSearch + "] " + text);
 		}
 	}
 
@@ -134,9 +142,9 @@ public class SREngine extends Observable implements RecognitionListener {
 		else
 			recognizer.startListening(searchName, 10000);
 
-		String caption = context.getString(captions.get(searchName));
-		setCaptionText(caption);
-		Log.i(TAG, "caption: " + caption);
+//		String caption = context.getString(captions.get(searchName));
+//		setCaptionText(caption);
+//		Log.i(TAG, "caption: " + caption);
 	}
 
 	private void setupRecognizer(File assetsDir) {
@@ -146,8 +154,8 @@ public class SREngine extends Observable implements RecognitionListener {
 		File modelsDir = new File(assetsDir, "models");
 		try {
 			recognizer = defaultSetup()
-					.setAcousticModel(new File(modelsDir, "hmm/en-us-semi"))
-					.setDictionary(new File(modelsDir, "dict/cmu07a.dic"))
+					.setAcousticModel(new File(modelsDir, "hmm/en-us-ptm"))
+	                .setDictionary(new File(modelsDir, "dict/cmudict-en-us.dict"))
 
 					// To disable logging of raw audio comment out this call
 					// (takes a lot of space on the device)
@@ -172,6 +180,10 @@ public class SREngine extends Observable implements RecognitionListener {
 		// Create grammar-based search for selection between demos
 		File navigationGrammar = new File(modelsDir, "grammar/navigation.gram");
 		recognizer.addGrammarSearch(NAVIGATION_SEARCH, navigationGrammar);
+		
+		// Create language model search
+        File languageModel = new File(modelsDir, "lm/cmusphinx-5.0-en-us.lm.dmp");
+        recognizer.addNgramSearch(WRITE_SEARCH, languageModel);
 
 	}
 
