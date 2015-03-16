@@ -16,6 +16,7 @@ import org.androidannotations.annotations.EService;
 import android.accessibilityservice.AccessibilityService;
 import android.app.KeyguardManager;
 import android.app.KeyguardManager.KeyguardLock;
+import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
 import android.content.ClipData;
 import android.content.ClipboardManager;
@@ -27,9 +28,11 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
+import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
+import br.ufrj.pee.pocketmotrix.R;
 import br.ufrj.pee.pocketmotrix.badge.OverlayBadges;
 import br.ufrj.pee.pocketmotrix.engine.SREngine;
 import br.ufrj.pee.pocketmotrix.engine.TTSEngine;
@@ -60,10 +63,13 @@ public class PocketMotrixService extends AccessibilityService implements
 	private WakeLock wakeLock;
 	private KeyguardLock keyguardLock;
 	private KeyguardManager keyguardManager;
+	private NotificationManager notificationManager;
+	private NotificationCompat.Builder notificationBuilder;
 
 	private ClipboardManager clipboard;
 	protected static ReentrantLock mActionLock;
 
+	private int noificationId = 0;
 	private OverlayBadges mBadges;
 
 	private AccessibilityNodeInfo rootNode;
@@ -107,6 +113,16 @@ public class PocketMotrixService extends AccessibilityService implements
 
 		clipboard = (ClipboardManager) context
 				.getSystemService(Context.CLIPBOARD_SERVICE);
+		
+		notificationManager = (NotificationManager) context.getSystemService(NOTIFICATION_SERVICE);
+		
+		notificationBuilder = new NotificationCompat.Builder(context)
+		.setSmallIcon(R.drawable.ic_launcher)
+		.setContentTitle("PocketMotrix")
+		.setContentText("Service Initialized")
+		.setTicker("service initialized");
+		
+		notificationManager.notify(noificationId, notificationBuilder.build());
 
 		registerReceiver(mReceiver, new IntentFilter(Intent.ACTION_SCREEN_OFF));
 	}
@@ -403,6 +419,10 @@ public class PocketMotrixService extends AccessibilityService implements
 
 			String text = mSREngine.getResultText();
 
+			notificationBuilder.setContentText(text)
+			.setTicker(text);
+			notificationManager.notify(noificationId, notificationBuilder.build());
+			
 			if (mSREngine.getCurrentMode() == SREngine.MODE.WRITE) {
 				writeText(text);
 			} else {
@@ -421,8 +441,12 @@ public class PocketMotrixService extends AccessibilityService implements
 			}
 
 		} else if (observable instanceof TTSEngine) {
-			if (mTTSEngine.getIsInitialized())
+			if (mTTSEngine.getIsInitialized()) {
+				notificationBuilder.setContentText("TTS Initialized")
+				.setTicker("TTS Initialized");
+				notificationManager.notify(noificationId, notificationBuilder.build());
 				mSREngine.setupEngine();
+			}
 		}
 	}
 
