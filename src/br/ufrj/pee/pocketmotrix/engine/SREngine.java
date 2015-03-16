@@ -31,12 +31,19 @@ public class SREngine extends Observable implements RecognitionListener {
 	private static final String DEACTIVATE_SEARCH = "stop listening";
 	private static final String WRITE_SEARCH = "write";
 
+	public static enum MODE {
+		IDDLE,
+		NAVIGATION,
+		WRITE
+	};
+	
 	private SpeechRecognizer recognizer;
 	private HashMap<String, Integer> captions;
 
 	private String currentSearch = "";
 	private String captionText = "";
 	private String resultText = "";
+	private MODE currentMode;
 
 	@RootContext
 	Context context;
@@ -70,6 +77,7 @@ public class SREngine extends Observable implements RecognitionListener {
 				} else {
 					switchSearch(KWS_SEARCH);
 					currentSearch = KWS_SEARCH;
+					currentMode = MODE.IDDLE;
 				}
 			}
 		}.execute();
@@ -91,12 +99,15 @@ public class SREngine extends Observable implements RecognitionListener {
 		if (text.equals(DEACTIVATE_SEARCH)) {
 			switchSearch(KWS_SEARCH);
 			currentSearch = KWS_SEARCH;
+			currentMode = MODE.IDDLE;
 		} else if (text.equals(KEYPHRASE) || text.contains(NAVIGATION_SEARCH)) {
 			switchSearch(NAVIGATION_SEARCH);
 			currentSearch = NAVIGATION_SEARCH;
+			currentMode = MODE.NAVIGATION;
 		} else if (text.equals(WRITE_SEARCH)) {
 			switchSearch(WRITE_SEARCH);
 			currentSearch = WRITE_SEARCH;
+			currentMode = MODE.WRITE;
 		} else
 			Log.i(TAG, "parcial result: [" + currentSearch + "] " + text);
 	}
@@ -116,6 +127,7 @@ public class SREngine extends Observable implements RecognitionListener {
 			if (KWS_SEARCH.equals(recognizer.getSearchName())
 					&& !DEACTIVATE_SEARCH.equals(text))
 				switchSearch(currentSearch);
+			
 
 			setResultText(text);
 
@@ -130,7 +142,7 @@ public class SREngine extends Observable implements RecognitionListener {
 	@Override
 	public void onEndOfSpeech() {
 		if (!recognizer.getSearchName().equals(KWS_SEARCH))
-			switchSearch(KWS_SEARCH);
+			switchSearch(currentSearch);
 	}
 
 	private void switchSearch(String searchName) {
@@ -215,5 +227,10 @@ public class SREngine extends Observable implements RecognitionListener {
 		setChanged();
 		notifyObservers(resultText);
 	}
+	
+	public MODE getCurrentMode() {
+		return currentMode;
+	}
+
 
 }

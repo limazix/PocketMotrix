@@ -16,4 +16,4 @@ grammar navigation;
 
 <numbers> = one | two | three | four | five | six | seven | eight | nine | zero;
 
-public <command> = <global> | <basic> | <action> | <numbers>;
+public <command> = <global> | <basic> | <action> | <numbers> | <NULL>;
