@@ -15,13 +15,10 @@ import org.androidannotations.annotations.Bean;
 import org.androidannotations.annotations.EService;
 
 import android.accessibilityservice.AccessibilityService;
-import android.app.NotificationManager;
 import android.content.Context;
-import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
-import br.ufrj.pee.pocketmotrix.R;
 import br.ufrj.pee.pocketmotrix.app.PocketMotrixApp;
 import br.ufrj.pee.pocketmotrix.badge.OverlayBadges;
 import br.ufrj.pee.pocketmotrix.engine.GoogleSREngine;
@@ -55,12 +52,9 @@ public class PocketMotrixService extends AccessibilityService implements
 	};
 	
 	private Context context;
-	private NotificationManager notificationManager;
-	private NotificationCompat.Builder notificationBuilder;
 
 	protected static ReentrantLock mActionLock;
 
-	private int noificationId = 0;
 	private OverlayBadges mBadges;
 
 	private AccessibilityNodeInfo rootNode;
@@ -83,28 +77,13 @@ public class PocketMotrixService extends AccessibilityService implements
 
 	@Override
 	public void onCreate() {
-		Log.i(TAG, "PocketMotrixService Created");
 
-		init();
-	}
-
-	private void init() {
 		mActionLock = new ReentrantLock();
 
 		context = getApplicationContext();
 
 		mBadges = new OverlayBadges(context);
 		
-		notificationManager = (NotificationManager) context.getSystemService(NOTIFICATION_SERVICE);
-		
-		notificationBuilder = new NotificationCompat.Builder(context)
-		.setSmallIcon(R.drawable.ic_launcher)
-		.setContentTitle("PocketMotrix")
-		.setContentText("Service Initialized")
-		.setTicker("service initialized");
-		
-		notificationManager.notify(noificationId, notificationBuilder.build());
-
 	}
 
 	private void activateBadges() {
@@ -126,7 +105,6 @@ public class PocketMotrixService extends AccessibilityService implements
 	@Override
 	public void onServiceConnected() {
 		super.onServiceConnected();
-		Log.i(TAG, "PocketMotrixService Connected");
 		activateBadges();
 	}
 
@@ -399,8 +377,8 @@ public class PocketMotrixService extends AccessibilityService implements
 
 			String text = mSREngine.getResultText();
 
-			notificationBuilder.setContentText(text).setTicker(text);
-			notificationManager.notify(noificationId, notificationBuilder.build());
+			app.setNotificationTicker(text);
+			app.showNotification();
 			
 			if (text.equals("write")) {
 				mSREngine.toIddle();
@@ -424,9 +402,9 @@ public class PocketMotrixService extends AccessibilityService implements
 			writeText(text);
 		} else if (observable instanceof TTSEngine) {
 			if (mTTSEngine.getIsInitialized()) {
-				notificationBuilder.setContentText("TTS Initialized")
-				.setTicker("TTS Initialized");
-				notificationManager.notify(noificationId, notificationBuilder.build());
+				app.setNotificationContentText("TTS initialized");
+				app.setNotificationTicker("TTS Initialized");
+				app.showNotification();
 				mSREngine.setupEngine();
 				gSREngine.setupRecognitionEngine();
 			}
