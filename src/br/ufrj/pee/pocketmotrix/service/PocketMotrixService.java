@@ -19,7 +19,6 @@ import android.app.NotificationManager;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
-import android.media.AudioManager;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
@@ -58,7 +57,6 @@ public class PocketMotrixService extends AccessibilityService implements
 	};
 	
 	private Context context;
-	private AudioManager audioManager;
 	private NotificationManager notificationManager;
 	private NotificationCompat.Builder notificationBuilder;
 
@@ -99,9 +97,6 @@ public class PocketMotrixService extends AccessibilityService implements
 		context = getApplicationContext();
 
 		mBadges = new OverlayBadges(context);
-
-		audioManager = (AudioManager) context
-				.getSystemService(Context.AUDIO_SERVICE);
 
 		clipboard = (ClipboardManager) context
 				.getSystemService(Context.CLIPBOARD_SERVICE);
@@ -475,12 +470,10 @@ public class PocketMotrixService extends AccessibilityService implements
 			scroll(AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD);
 			break;
 		case LOUDER:
-			audioManager.adjustVolume(AudioManager.ADJUST_RAISE,
-					AudioManager.FLAG_SHOW_UI | AudioManager.FLAG_PLAY_SOUND);
+			app.volumeLouder();
 			break;
 		case QUIETER:
-			audioManager.adjustVolume(AudioManager.ADJUST_LOWER,
-					AudioManager.FLAG_SHOW_UI | AudioManager.FLAG_PLAY_SOUND);
+			app.volumeQuieter();
 			break;
 		case WAKE_OR_KEEP_WAKE:
 			app.wakeupScreen();

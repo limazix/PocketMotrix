@@ -9,6 +9,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.media.AudioManager;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
 
@@ -17,10 +18,13 @@ public class PocketMotrixApp extends Application {
 
 	private static final String TAG = PocketMotrixApp.class.getName();
 	private static final long MIN_WAKE_TIME = 30000; 
+	
+	private AudioManager audioManager;
 	private PowerManager powerManager;
+	private KeyguardManager keyguardManager;
+	
 	private WakeLock wakeLock;
 	private KeyguardLock keyguardLock;
-	private KeyguardManager keyguardManager;
 	
 	@Override
 	public void onCreate() {
@@ -31,6 +35,9 @@ public class PocketMotrixApp extends Application {
 
 		keyguardManager = (KeyguardManager) getSystemService(Context.KEYGUARD_SERVICE);
 		keyguardLock = keyguardManager.newKeyguardLock(TAG);
+		
+		audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+
 
 		registerReceiver(mReceiver, new IntentFilter(Intent.ACTION_SCREEN_OFF));
 	}
@@ -43,6 +50,14 @@ public class PocketMotrixApp extends Application {
 	public void releaseLockScreen() {
 		if (wakeLock.isHeld())
 			wakeLock.release();
+	}
+	
+	public void volumeLouder() {
+		audioManager.adjustVolume(AudioManager.ADJUST_RAISE, AudioManager.FLAG_SHOW_UI | AudioManager.FLAG_PLAY_SOUND);
+	}
+	
+	public void volumeQuieter() {
+		audioManager.adjustVolume(AudioManager.ADJUST_LOWER, AudioManager.FLAG_SHOW_UI | AudioManager.FLAG_PLAY_SOUND);
 	}
 
 	private BroadcastReceiver mReceiver = new BroadcastReceiver() {
