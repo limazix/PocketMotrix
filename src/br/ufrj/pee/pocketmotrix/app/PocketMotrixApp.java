@@ -6,6 +6,8 @@ import android.app.Application;
 import android.app.KeyguardManager;
 import android.app.KeyguardManager.KeyguardLock;
 import android.content.BroadcastReceiver;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -16,9 +18,11 @@ import android.os.PowerManager.WakeLock;
 @EApplication
 public class PocketMotrixApp extends Application {
 
+	private static final String CLIPBOARD_LABEL = "label";
 	private static final String TAG = PocketMotrixApp.class.getName();
 	private static final long MIN_WAKE_TIME = 30000; 
 	
+	private ClipboardManager clipboardManager;
 	private AudioManager audioManager;
 	private PowerManager powerManager;
 	private KeyguardManager keyguardManager;
@@ -37,6 +41,9 @@ public class PocketMotrixApp extends Application {
 		keyguardLock = keyguardManager.newKeyguardLock(TAG);
 		
 		audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+
+
+		clipboardManager = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
 
 
 		registerReceiver(mReceiver, new IntentFilter(Intent.ACTION_SCREEN_OFF));
@@ -58,6 +65,12 @@ public class PocketMotrixApp extends Application {
 	
 	public void volumeQuieter() {
 		audioManager.adjustVolume(AudioManager.ADJUST_LOWER, AudioManager.FLAG_SHOW_UI | AudioManager.FLAG_PLAY_SOUND);
+	}
+	
+	public void wrteOnClipboard(String text) {
+		ClipData clip = ClipData.newPlainText(CLIPBOARD_LABEL, text);
+		clipboardManager.setPrimaryClip(clip);
+
 	}
 
 	private BroadcastReceiver mReceiver = new BroadcastReceiver() {

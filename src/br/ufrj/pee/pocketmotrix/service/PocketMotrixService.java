@@ -16,8 +16,6 @@ import org.androidannotations.annotations.EService;
 
 import android.accessibilityservice.AccessibilityService;
 import android.app.NotificationManager;
-import android.content.ClipData;
-import android.content.ClipboardManager;
 import android.content.Context;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
@@ -60,7 +58,6 @@ public class PocketMotrixService extends AccessibilityService implements
 	private NotificationManager notificationManager;
 	private NotificationCompat.Builder notificationBuilder;
 
-	private ClipboardManager clipboard;
 	protected static ReentrantLock mActionLock;
 
 	private int noificationId = 0;
@@ -97,9 +94,6 @@ public class PocketMotrixService extends AccessibilityService implements
 		context = getApplicationContext();
 
 		mBadges = new OverlayBadges(context);
-
-		clipboard = (ClipboardManager) context
-				.getSystemService(Context.CLIPBOARD_SERVICE);
 		
 		notificationManager = (NotificationManager) context.getSystemService(NOTIFICATION_SERVICE);
 		
@@ -273,11 +267,10 @@ public class PocketMotrixService extends AccessibilityService implements
 		if (editableField == null || !editableField.isVisibleToUser())
 			return;
 
-			ClipData clip = ClipData.newPlainText("label", text.concat(" "));
-			clipboard.setPrimaryClip(clip);
-			editableField.performAction(AccessibilityNodeInfo.ACTION_PASTE);
+		app.wrteOnClipboard(text.concat(" "));
+		editableField.performAction(AccessibilityNodeInfo.ACTION_PASTE);
 
-			if(isLocked) mActionLock.unlock();
+		if(isLocked) mActionLock.unlock();
 	}
 
 	/**
