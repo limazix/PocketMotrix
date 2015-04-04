@@ -24,8 +24,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.media.AudioManager;
-import android.os.Build;
-import android.os.Bundle;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
 import android.support.v4.app.NotificationCompat;
@@ -34,6 +32,7 @@ import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 import br.ufrj.pee.pocketmotrix.R;
 import br.ufrj.pee.pocketmotrix.badge.OverlayBadges;
+import br.ufrj.pee.pocketmotrix.engine.GoogleSREngine;
 import br.ufrj.pee.pocketmotrix.engine.SREngine;
 import br.ufrj.pee.pocketmotrix.engine.TTSEngine;
 
@@ -57,6 +56,14 @@ public class PocketMotrixService extends AccessibilityService implements
 		numbers.put("zero", "0");
 	};
 
+	public static enum MODE {
+		IDDLE,
+		NAVIGATION,
+		WRITE
+	};
+	
+	private MODE currentMode;
+	
 	private Context context;
 	private AudioManager audioManager;
 	private PowerManager powerManager;
@@ -77,6 +84,9 @@ public class PocketMotrixService extends AccessibilityService implements
 
 	@Bean
 	SREngine mSREngine;
+	
+	@Bean
+	GoogleSREngine gSREngine;
 
 	@Bean
 	TTSEngine mTTSEngine;
@@ -154,6 +164,7 @@ public class PocketMotrixService extends AccessibilityService implements
 	public void settingupEngines() {
 		mTTSEngine.addObserver(this);
 		mSREngine.addObserver(this);
+		gSREngine.addObserver(this);
 	}
 
 	@Override
@@ -419,12 +430,13 @@ public class PocketMotrixService extends AccessibilityService implements
 
 			String text = mSREngine.getResultText();
 
-			notificationBuilder.setContentText(text)
-			.setTicker(text);
+			notificationBuilder.setContentText(text).setTicker(text);
 			notificationManager.notify(noificationId, notificationBuilder.build());
 			
-			if (mSREngine.getCurrentMode() == SREngine.MODE.WRITE) {
-				writeText(text);
+			if (text.equals("write")) {
+				mSREngine.toIddle();
+				currentMode = MODE.WRITE;
+				gSREngine.startListening();
 			} else {
 				String cmd = text.replaceAll("\\s", "");
 				if (numbers.containsKey(cmd)) {
@@ -439,13 +451,16 @@ public class PocketMotrixService extends AccessibilityService implements
 				} else
 					execute(Command.get(cmd));
 			}
-
+		} else if (observable instanceof GoogleSREngine) {
+			String text = gSREngine.getMatch();
+			writeText(text);
 		} else if (observable instanceof TTSEngine) {
 			if (mTTSEngine.getIsInitialized()) {
 				notificationBuilder.setContentText("TTS Initialized")
 				.setTicker("TTS Initialized");
 				notificationManager.notify(noificationId, notificationBuilder.build());
 				mSREngine.setupEngine();
+				gSREngine.setupRecognitionEngine();
 			}
 		}
 	}

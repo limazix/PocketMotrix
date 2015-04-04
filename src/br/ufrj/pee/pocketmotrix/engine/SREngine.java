@@ -30,12 +30,6 @@ public class SREngine extends Observable implements RecognitionListener {
 	private static final String NAVIGATION_SEARCH = "navigation";
 	private static final String DEACTIVATE_SEARCH = "stop listening";
 	private static final String WRITE_SEARCH = "write";
-
-	public static enum MODE {
-		IDDLE,
-		NAVIGATION,
-		WRITE
-	};
 	
 	private SpeechRecognizer recognizer;
 	private HashMap<String, Integer> captions;
@@ -43,7 +37,6 @@ public class SREngine extends Observable implements RecognitionListener {
 	private String currentSearch = "";
 	private String captionText = "";
 	private String resultText = "";
-	private MODE currentMode;
 
 	@RootContext
 	Context context;
@@ -77,7 +70,6 @@ public class SREngine extends Observable implements RecognitionListener {
 				} else {
 					switchSearch(KWS_SEARCH);
 					currentSearch = KWS_SEARCH;
-					currentMode = MODE.IDDLE;
 				}
 			}
 		}.execute();
@@ -99,15 +91,13 @@ public class SREngine extends Observable implements RecognitionListener {
 		if (text.equals(DEACTIVATE_SEARCH)) {
 			switchSearch(KWS_SEARCH);
 			currentSearch = KWS_SEARCH;
-			currentMode = MODE.IDDLE;
 		} else if (text.equals(KEYPHRASE) || text.contains(NAVIGATION_SEARCH)) {
 			switchSearch(NAVIGATION_SEARCH);
 			currentSearch = NAVIGATION_SEARCH;
-			currentMode = MODE.NAVIGATION;
-		} else if (text.equals(WRITE_SEARCH)) {
-			switchSearch(WRITE_SEARCH);
-			currentSearch = WRITE_SEARCH;
-			currentMode = MODE.WRITE;
+//		} else if (text.equals(WRITE_SEARCH)) {
+//			switchSearch(WRITE_SEARCH);
+//			currentSearch = WRITE_SEARCH;
+//			currentMode = MODE.WRITE;
 		} else
 			Log.i(TAG, "parcial result: [" + currentSearch + "] " + text);
 	}
@@ -148,15 +138,11 @@ public class SREngine extends Observable implements RecognitionListener {
 	private void switchSearch(String searchName) {
 		recognizer.stop();
 
-		// If we are not spotting, start listening with timeout
 		if (searchName.equals(KWS_SEARCH))
 			recognizer.startListening(searchName);
 		else
 			recognizer.startListening(searchName, 10000);
 
-//		String caption = context.getString(captions.get(searchName));
-//		setCaptionText(caption);
-//		Log.i(TAG, "caption: " + caption);
 	}
 
 	private void setupRecognizer(File assetsDir) {
@@ -192,10 +178,6 @@ public class SREngine extends Observable implements RecognitionListener {
 		// Create grammar-based search for selection between demos
 		File navigationGrammar = new File(modelsDir, "grammar/navigation.gram");
 		recognizer.addGrammarSearch(NAVIGATION_SEARCH, navigationGrammar);
-		
-		// Create language model search
-        File languageModel = new File(modelsDir, "lm/cmusphinx-5.0-en-us.lm.dmp");
-        recognizer.addNgramSearch(WRITE_SEARCH, languageModel);
 
 	}
 
@@ -228,9 +210,11 @@ public class SREngine extends Observable implements RecognitionListener {
 		notifyObservers(resultText);
 	}
 	
-	public MODE getCurrentMode() {
-		return currentMode;
+	public void toIddle() {
+		switchSearch(KWS_SEARCH);
+		currentSearch = KWS_SEARCH;
 	}
-
+	
+	
 
 }
