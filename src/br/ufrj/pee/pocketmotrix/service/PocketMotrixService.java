@@ -9,28 +9,23 @@ import java.util.Queue;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.androidannotations.annotations.AfterInject;
+import org.androidannotations.annotations.App;
 import org.androidannotations.annotations.Background;
 import org.androidannotations.annotations.Bean;
 import org.androidannotations.annotations.EService;
 
 import android.accessibilityservice.AccessibilityService;
-import android.app.KeyguardManager;
-import android.app.KeyguardManager.KeyguardLock;
 import android.app.NotificationManager;
-import android.content.BroadcastReceiver;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
 import android.media.AudioManager;
-import android.os.PowerManager;
-import android.os.PowerManager.WakeLock;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 import br.ufrj.pee.pocketmotrix.R;
+import br.ufrj.pee.pocketmotrix.app.PocketMotrixApp;
 import br.ufrj.pee.pocketmotrix.badge.OverlayBadges;
 import br.ufrj.pee.pocketmotrix.engine.GoogleSREngine;
 import br.ufrj.pee.pocketmotrix.engine.SREngine;
@@ -62,14 +57,8 @@ public class PocketMotrixService extends AccessibilityService implements
 		WRITE
 	};
 	
-	private MODE currentMode;
-	
 	private Context context;
 	private AudioManager audioManager;
-	private PowerManager powerManager;
-	private WakeLock wakeLock;
-	private KeyguardLock keyguardLock;
-	private KeyguardManager keyguardManager;
 	private NotificationManager notificationManager;
 	private NotificationCompat.Builder notificationBuilder;
 
@@ -90,6 +79,9 @@ public class PocketMotrixService extends AccessibilityService implements
 
 	@Bean
 	TTSEngine mTTSEngine;
+	
+	@App
+	PocketMotrixApp app;
 
 	private boolean isScrolling = false;
 	private int direction;
@@ -111,16 +103,6 @@ public class PocketMotrixService extends AccessibilityService implements
 		audioManager = (AudioManager) context
 				.getSystemService(Context.AUDIO_SERVICE);
 
-		powerManager = (PowerManager) context
-				.getSystemService(Context.POWER_SERVICE);
-		wakeLock = powerManager.newWakeLock(PowerManager.ACQUIRE_CAUSES_WAKEUP
-				| PowerManager.FULL_WAKE_LOCK | PowerManager.ON_AFTER_RELEASE,
-				TAG);
-
-		keyguardManager = (KeyguardManager) context
-				.getSystemService(Context.KEYGUARD_SERVICE);
-		keyguardLock = keyguardManager.newKeyguardLock(TAG);
-
 		clipboard = (ClipboardManager) context
 				.getSystemService(Context.CLIPBOARD_SERVICE);
 		
@@ -134,7 +116,6 @@ public class PocketMotrixService extends AccessibilityService implements
 		
 		notificationManager.notify(noificationId, notificationBuilder.build());
 
-		registerReceiver(mReceiver, new IntentFilter(Intent.ACTION_SCREEN_OFF));
 	}
 
 	private void activateBadges() {
@@ -435,7 +416,6 @@ public class PocketMotrixService extends AccessibilityService implements
 			
 			if (text.equals("write")) {
 				mSREngine.toIddle();
-				currentMode = MODE.WRITE;
 				gSREngine.startListening();
 			} else {
 				String cmd = text.replaceAll("\\s", "");
@@ -503,12 +483,10 @@ public class PocketMotrixService extends AccessibilityService implements
 					AudioManager.FLAG_SHOW_UI | AudioManager.FLAG_PLAY_SOUND);
 			break;
 		case WAKE_OR_KEEP_WAKE:
-			keyguardLock.disableKeyguard();
-			wakeLock.acquire();
+			app.wakeupScreen();
 			break;
 		case RELEASE_KEEP_WAKE:
-			if (wakeLock.isHeld())
-				wakeLock.release();
+			app.releaseLockScreen();
 			break;
 		case REFRESH:
 			activateBadges();
@@ -524,17 +502,8 @@ public class PocketMotrixService extends AccessibilityService implements
 
 	@Override
 	public void onInterrupt() {
-		// TODO Auto-generated method stub
 
 	}
 
-	private BroadcastReceiver mReceiver = new BroadcastReceiver() {
-
-		@Override
-		public void onReceive(Context context, Intent intent) {
-			if (intent.getAction().equals(Intent.ACTION_SCREEN_OFF))
-				keyguardLock.reenableKeyguard();
-		}
-	};
 
 }
