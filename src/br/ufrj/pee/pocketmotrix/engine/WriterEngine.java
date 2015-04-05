@@ -30,6 +30,8 @@ public class WriterEngine implements RecognitionListener {
 	
 	private WriterListener listener;
 
+	private boolean isActive = false;
+
 	public void setupRecognitionEngine() {
 		recognizer = SpeechRecognizer.createSpeechRecognizer(context);
 		recognizer.setRecognitionListener(this);
@@ -41,6 +43,10 @@ public class WriterEngine implements RecognitionListener {
 		
 	}
 	
+	public boolean isActive() {
+		return isActive ;
+	}
+	
 	public WriterListener getWriterListener() {
 		return listener;
 	}
@@ -49,17 +55,19 @@ public class WriterEngine implements RecognitionListener {
 		this.listener = listener;
 	}
 
-	public void startListening() {
+	public void startWriter() {
 		recognizer.startListening(recognizerIntent);
 	}
 
-	public void stopListening() {
+	public void stopWriter() {
 		recognizer.stopListening();
+		isActive = false;
 		listener.onWriterStoped();
 	}
 
 	@Override
 	public void onReadyForSpeech(Bundle params) {
+		isActive = true;
 		listener.onWriterReady();
 	}
 

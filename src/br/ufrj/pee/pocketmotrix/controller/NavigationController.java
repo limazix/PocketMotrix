@@ -35,11 +35,10 @@ public class NavigationController implements NavigationListener {
 		service = app.getPocketMotrixService();
 	}
 	
-	public void finish() {
+	public void stopEngine() {
 		commanderEngine.finishEngine();
 	}
 	
-
 	private void execute(Command cmd) {
 
 		switch (cmd) {
@@ -83,19 +82,20 @@ public class NavigationController implements NavigationListener {
 			break;
 		case CLEAR:
 			service.deactivateBadges();
+			break;
+		case WRITE:
+			commanderEngine.toIddle();
+			service.startWrite();
+			break;
 		default:
 			break;
 		}
-
 	}
 	
 	@Override
 	public void onNavigationCommand(Command cmd) {
 		service.showNotification(cmd.getLabel());
-		if(cmd.equals(Command.WRITE)) {
-			commanderEngine.toIddle();
-			service.startWrite();
-		} else execute(cmd);
+		execute(cmd);
 	}
 
 	@Override

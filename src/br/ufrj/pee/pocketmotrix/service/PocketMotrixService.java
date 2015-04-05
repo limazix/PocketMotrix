@@ -18,13 +18,12 @@ import android.view.accessibility.AccessibilityNodeInfo;
 import br.ufrj.pee.pocketmotrix.app.PocketMotrixApp;
 import br.ufrj.pee.pocketmotrix.badge.OverlayBadges;
 import br.ufrj.pee.pocketmotrix.controller.NavigationController;
+import br.ufrj.pee.pocketmotrix.controller.WritingController;
 import br.ufrj.pee.pocketmotrix.engine.SpeakerEngine;
-import br.ufrj.pee.pocketmotrix.engine.WriterEngine;
 import br.ufrj.pee.pocketmotrix.listener.SpeakerListener;
-import br.ufrj.pee.pocketmotrix.listener.WriterListener;
 
 @EService
-public class PocketMotrixService extends AccessibilityService implements SpeakerListener, WriterListener {
+public class PocketMotrixService extends AccessibilityService implements SpeakerListener {
 
 	private static final String TAG = PocketMotrixService_.class.getName();
 
@@ -39,7 +38,7 @@ public class PocketMotrixService extends AccessibilityService implements Speaker
 	NavigationController navigationController;
 	
 	@Bean
-	WriterEngine writerEngine;
+	WritingController writingController;
 
 	@Bean
 	SpeakerEngine speakerEngine;
@@ -87,7 +86,6 @@ public class PocketMotrixService extends AccessibilityService implements Speaker
 	public void settingupEngines() {
 		app.setPocketMotrixService(this);
 		speakerEngine.setListener(this);
-		writerEngine.setWriterListener(this);
 	}
 
 	@Override
@@ -341,13 +339,13 @@ public class PocketMotrixService extends AccessibilityService implements Speaker
 
 	@Override
 	public void onDestroy() {
-		navigationController.finish();
-		speakerEngine.finishEngine();
+		navigationController.stopEngine();
+		writingController.stopEngine();
 		deactivateBadges();
 	}
 
 	public void startWrite() {
-		writerEngine.startListening();
+		writingController.startEngine();
 	}
 	
 	@Override
@@ -381,35 +379,12 @@ public class PocketMotrixService extends AccessibilityService implements Speaker
 	@Override
 	public void onSpeakerReady() { 
 		navigationController.setup();
-		writerEngine.setupRecognitionEngine();
+		writingController.setup();
 	}
 
 	@Override
 	public void onSpeakerError(String errorMessage) {
 		showNotification(errorMessage);
 	}
-
-	@Override
-	public void onWriterReady() {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public void onWriterStoped() {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public void onWriteText(String text) {
-		writeText(text);
-	}
-
-	@Override
-	public void onWriterError(String errorMessage) {
-		showNotification(errorMessage);
-	}
-
 
 }

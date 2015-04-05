@@ -65,10 +65,11 @@ public class CommanderEngine implements RecognitionListener {
 			protected void onPostExecute(Exception result) {
 				if (result != null) {
 					Log.e(TAG, "Failed to init recognizer " + result.getMessage());
-					listener.onNavigationError(result.getMessage());
+					listener.onNavigationError("");
 				} else {
 					switchSearch(KWS_SEARCH);
 					currentSearch = KWS_SEARCH;
+					listener.onNavigatorReady();
 				}
 			}
 		}.execute();
