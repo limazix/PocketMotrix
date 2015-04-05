@@ -151,7 +151,11 @@ public class PocketMotrixService extends AccessibilityService implements Speaker
 
 	@Background
 	public void clickActiveNode(AccessibilityNodeInfo node) {
+		boolean isLocked = mActionLock.tryLock();
+
 		node.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+
+		if (isLocked) mActionLock.unlock();
 	}
 
 	private void getScrollables(AccessibilityNodeInfo node,
@@ -190,8 +194,7 @@ public class PocketMotrixService extends AccessibilityService implements Speaker
 		node.performAction(direction);
 		setScrolling(false);
 
-		if (isLocked)
-			mActionLock.unlock();
+		if (isLocked) mActionLock.unlock();
 	}
 
 	private void enumerate() {
