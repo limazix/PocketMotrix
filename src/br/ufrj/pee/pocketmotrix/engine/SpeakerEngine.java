@@ -1,24 +1,26 @@
 package br.ufrj.pee.pocketmotrix.engine;
 
 import java.util.Locale;
-import java.util.Observable;
 
 import org.androidannotations.annotations.AfterInject;
 import org.androidannotations.annotations.EBean;
-import org.androidannotations.annotations.RootContext;
 import org.androidannotations.annotations.EBean.Scope;
+import org.androidannotations.annotations.RootContext;
 
 import android.content.Context;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.TextToSpeech.OnInitListener;
 import android.util.Log;
+import br.ufrj.pee.pocketmotrix.listener.SpeakerListener;
 
 @EBean(scope = Scope.Singleton)
-public class TTSEngine extends Observable implements OnInitListener {
+public class SpeakerEngine implements OnInitListener {
 
-	private static final String TAG = TTSEngine_.class.getName();
+	private static final String TAG = SpeakerEngine_.class.getName();
 	private TextToSpeech mTTS;
 	private Boolean isInitialized = false;
+	
+	private SpeakerListener listener;
 	
 	@RootContext
 	Context context;
@@ -35,23 +37,24 @@ public class TTSEngine extends Observable implements OnInitListener {
 		if(isInitialized)
 			mTTS.speak(msg, TextToSpeech.QUEUE_ADD, null);
 		else
-			Log.i(TAG, "Not initialized");
+			Log.e(TAG, "Not initialized");
 	}
 
 	@Override
 	public void onInit(int status) {
 		Log.i(TAG, "oninit");
 		if (status == TextToSpeech.SUCCESS) {
-			int result = mTTS.setLanguage(Locale.US);
+			int result = mTTS.setLanguage(Locale.getDefault());
 			if (result == TextToSpeech.LANG_MISSING_DATA
 					|| result == TextToSpeech.LANG_NOT_SUPPORTED) {
 				Log.i(TAG, "Language is not available.");
 			} else {
 				setIsInitialized(true);
-				Log.i(TAG, "Successful Initialized");
 			}
 		} else {
-			Log.i(TAG, "Could not initialize TextToSpeech.");
+			String errorMessage = "Could not initialize TextToSpeech.";
+			listener.onSpeakerError(errorMessage);
+			Log.e(TAG, errorMessage);
 		}
 	}
 
@@ -61,13 +64,16 @@ public class TTSEngine extends Observable implements OnInitListener {
 
 	public void setIsInitialized(Boolean isInitialized) {
 		this.isInitialized = isInitialized;
-		setChanged();
-		notifyObservers();
+		listener.onSpeakerReady();
 	}
 	
 	public void finishEngine() {
-		Log.i(TAG, "Stop");
-//		mTTS.stop();
+		mTTS.stop();
 	}
+
+	public void setListener(SpeakerListener listener) {
+		this.listener = listener;
+	}
+	
 	
 }

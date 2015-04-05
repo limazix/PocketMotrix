@@ -21,21 +21,16 @@ import br.ufrj.pee.pocketmotrix.app.PocketMotrixApp;
 import br.ufrj.pee.pocketmotrix.badge.OverlayBadges;
 import br.ufrj.pee.pocketmotrix.engine.GoogleSREngine;
 import br.ufrj.pee.pocketmotrix.engine.SREngine;
-import br.ufrj.pee.pocketmotrix.engine.TTSEngine;
+import br.ufrj.pee.pocketmotrix.engine.SpeakerEngine;
 import br.ufrj.pee.pocketmotrix.listener.NavigationListener;
+import br.ufrj.pee.pocketmotrix.listener.SpeakerListener;
 import br.ufrj.pee.pocketmotrix.util.PocketMotrixUtils;
 
 @EService
 public class PocketMotrixService extends AccessibilityService implements
-		NavigationListener, Observer {
+		NavigationListener, SpeakerListener, Observer {
 
 	private static final String TAG = PocketMotrixService_.class.getName();
-
-	public static enum MODE {
-		IDDLE,
-		NAVIGATION,
-		WRITE
-	};
 
 	protected static ReentrantLock mActionLock;
 
@@ -51,7 +46,7 @@ public class PocketMotrixService extends AccessibilityService implements
 	GoogleSREngine gSREngine;
 
 	@Bean
-	TTSEngine mTTSEngine;
+	SpeakerEngine speakerEngine;
 	
 	@App
 	PocketMotrixApp app;
@@ -93,7 +88,7 @@ public class PocketMotrixService extends AccessibilityService implements
 	@AfterInject
 	public void settingupEngines() {
 		mSREngine.setNavigationListener(this);
-		mTTSEngine.addObserver(this);
+		speakerEngine.setListener(this);
 		gSREngine.addObserver(this);
 	}
 
@@ -345,25 +340,16 @@ public class PocketMotrixService extends AccessibilityService implements
 	@Override
 	public void onDestroy() {
 		mSREngine.finishEngine();
-		mTTSEngine.deleteObserver(this);
-		mTTSEngine.finishEngine();
+		speakerEngine.finishEngine();
 		deactivateBadges();
 	}
 
 	@Override
 	public void update(Observable observable, Object data) {
 
-//			mTTSEngine.speakToUser(mSREngine.getResultText());
-			
 		if (observable instanceof GoogleSREngine) {
 			String text = gSREngine.getMatch();
 			writeText(text);
-		} else if (observable instanceof TTSEngine) {
-			if (mTTSEngine.getIsInitialized()) {
-				showNotification("TTS initialized");
-				mSREngine.setupEngine();
-				gSREngine.setupRecognitionEngine();
-			}
 		}
 	}
 
@@ -426,6 +412,7 @@ public class PocketMotrixService extends AccessibilityService implements
 	}
 
 	private void showNotification(String message) {
+		speakerEngine.speakToUser(message);
 		app.setNotificationContentText(message);
 		app.setNotificationTicker(message);
 		app.showNotification();
@@ -455,6 +442,17 @@ public class PocketMotrixService extends AccessibilityService implements
 
 	@Override
 	public void onNavigationError(String errorMessage) {
+		showNotification(errorMessage);
+	}
+
+	@Override
+	public void onSpeakerReady() { 
+		mSREngine.setupEngine();
+		gSREngine.setupRecognitionEngine();
+	}
+
+	@Override
+	public void onSpeakerError(String errorMessage) {
 		showNotification(errorMessage);
 	}
 

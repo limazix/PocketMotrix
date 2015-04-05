@@ -174,6 +174,7 @@ public class SREngine implements RecognitionListener {
 
 	@Override
 	public void onError(Exception error) {
+		listener.onNavigationError(error.getMessage());
 		Log.e(TAG, "============" + error.getMessage() + "============");
 	}
 
