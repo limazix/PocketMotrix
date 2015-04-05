@@ -1,13 +1,11 @@
 package br.ufrj.pee.pocketmotrix.badge;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 
 import org.androidannotations.annotations.EBean;
 
 import android.content.Context;
-import android.util.Log;
 import android.view.WindowManager;
 import android.view.accessibility.AccessibilityNodeInfo;
 import ca.idrc.tecla.framework.SimpleOverlay;

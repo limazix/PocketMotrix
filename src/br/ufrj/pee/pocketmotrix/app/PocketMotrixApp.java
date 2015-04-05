@@ -134,8 +134,6 @@ public class PocketMotrixApp extends Application {
 		this.pocketMotrixService = pocketMotrixService;
 	}
 
-
-
 	private BroadcastReceiver mReceiver = new BroadcastReceiver() {
 
 		@Override

@@ -17,17 +17,14 @@ import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 import br.ufrj.pee.pocketmotrix.app.PocketMotrixApp;
 import br.ufrj.pee.pocketmotrix.badge.OverlayBadges;
-import br.ufrj.pee.pocketmotrix.engine.NavigatorEngine;
+import br.ufrj.pee.pocketmotrix.controller.NavigationController;
 import br.ufrj.pee.pocketmotrix.engine.SpeakerEngine;
 import br.ufrj.pee.pocketmotrix.engine.WriterEngine;
-import br.ufrj.pee.pocketmotrix.listener.NavigationListener;
 import br.ufrj.pee.pocketmotrix.listener.SpeakerListener;
 import br.ufrj.pee.pocketmotrix.listener.WriterListener;
-import br.ufrj.pee.pocketmotrix.util.PocketMotrixUtils;
 
 @EService
-public class PocketMotrixService extends AccessibilityService implements
-		NavigationListener, SpeakerListener, WriterListener {
+public class PocketMotrixService extends AccessibilityService implements SpeakerListener, WriterListener {
 
 	private static final String TAG = PocketMotrixService_.class.getName();
 
@@ -39,7 +36,7 @@ public class PocketMotrixService extends AccessibilityService implements
 	private AccessibilityNodeInfo editableField;
 
 	@Bean
-	NavigatorEngine navigatorEngine;
+	NavigationController navigationController;
 	
 	@Bean
 	WriterEngine writerEngine;
@@ -57,12 +54,10 @@ public class PocketMotrixService extends AccessibilityService implements
 	public void onCreate() {
 
 		mActionLock = new ReentrantLock();
-
 		mBadges = new OverlayBadges(getApplicationContext());
-		
 	}
 
-	private void activateBadges() {
+	public void activateBadges() {
 		if (mBadges != null) {
 			if (!mBadges.isVisible()) {
 				mBadges.show();
@@ -70,7 +65,7 @@ public class PocketMotrixService extends AccessibilityService implements
 		}
 	}
 
-	private void deactivateBadges() {
+	public void deactivateBadges() {
 		if (mBadges != null) {
 			if (mBadges.isVisible()) {
 				mBadges.hide();
@@ -78,6 +73,10 @@ public class PocketMotrixService extends AccessibilityService implements
 		}
 	}
 
+	public ArrayList<AccessibilityNodeInfo> filterBadges(String filter) {
+		return mBadges.filterBadges(filter);
+	}
+	
 	@Override
 	public void onServiceConnected() {
 		super.onServiceConnected();
@@ -86,7 +85,7 @@ public class PocketMotrixService extends AccessibilityService implements
 
 	@AfterInject
 	public void settingupEngines() {
-		navigatorEngine.setNavigationListener(this);
+		app.setPocketMotrixService(this);
 		speakerEngine.setListener(this);
 		writerEngine.setWriterListener(this);
 	}
@@ -119,7 +118,7 @@ public class PocketMotrixService extends AccessibilityService implements
 
 	}
 
-	private void updateBadgesView(AccessibilityNodeInfo node) {
+	public void updateBadgesView(AccessibilityNodeInfo node) {
 		mBadges.clearBadges();
 		AccessibilityNodeInfo root = getRootInActiveWindow();
 		if (root != null)
@@ -179,8 +178,8 @@ public class PocketMotrixService extends AccessibilityService implements
 			scroll(scrollables.get(0), direction);
 		else if (scrollables.size() > 1) {
 			mBadges.addBadges(scrollables);
-			isScrolling = true;
-			this.direction = direction;
+			setScrolling(true);
+			setDirection(direction);
 		}
 	}
 
@@ -189,6 +188,7 @@ public class PocketMotrixService extends AccessibilityService implements
 		boolean isLocked = mActionLock.tryLock();
 
 		node.performAction(direction);
+		setScrolling(false);
 
 		if (isLocked)
 			mActionLock.unlock();
@@ -338,70 +338,37 @@ public class PocketMotrixService extends AccessibilityService implements
 
 	@Override
 	public void onDestroy() {
-		navigatorEngine.finishEngine();
+		navigationController.finish();
 		speakerEngine.finishEngine();
 		deactivateBadges();
 	}
 
-	private void execute(Command cmd) {
-
-		switch (cmd) {
-		case GO_HOME:
-			performGlobalAction(GLOBAL_ACTION_HOME);
-			break;
-		case GO_BACK:
-			performGlobalAction(GLOBAL_ACTION_BACK);
-			break;
-		// TODO action has no effect
-		case POWER:
-			performGlobalAction(GLOBAL_ACTION_POWER_DIALOG);
-			break;
-		case NOTIFICATION:
-			performGlobalAction(GLOBAL_ACTION_NOTIFICATIONS);
-			break;
-		// TODO improve badges not updating after scroll
-		case HISTORY:
-			performGlobalAction(GLOBAL_ACTION_RECENTS);
-			break;
-		case SETTINGS:
-			performGlobalAction(GLOBAL_ACTION_QUICK_SETTINGS);
-			break;
-		case GO_FORWARD:
-			scroll(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD);
-			break;
-		case GO_BACKWARD:
-			scroll(AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD);
-			break;
-		case LOUDER:
-			app.volumeLouder();
-			break;
-		case QUIETER:
-			app.volumeQuieter();
-			break;
-		case WAKE_OR_KEEP_WAKE:
-			app.wakeupScreen();
-			break;
-		case RELEASE_KEEP_WAKE:
-			app.releaseLockScreen();
-			break;
-		case REFRESH:
-			activateBadges();
-			updateBadgesView(rootNode);
-			break;
-		case CLEAR:
-			deactivateBadges();
-		default:
-			break;
-		}
-
+	public void startWrite() {
+		writerEngine.startListening();
 	}
-
+	
 	@Override
 	public void onInterrupt() {
 
 	}
 
-	private void showNotification(String message) {
+	public boolean isScrolling() {
+		return isScrolling;
+	}
+
+	public void setScrolling(boolean isScrolling) {
+		this.isScrolling = isScrolling;
+	}
+
+	public int getDirection() {
+		return direction;
+	}
+
+	public void setDirection(int direction) {
+		this.direction = direction;
+	}
+
+	public void showNotification(String message) {
 		speakerEngine.speakToUser(message);
 		app.setNotificationContentText(message);
 		app.setNotificationTicker(message);
@@ -409,35 +376,8 @@ public class PocketMotrixService extends AccessibilityService implements
 	}
 	
 	@Override
-	public void onNavigationCommand(Command cmd) {
-		showNotification(cmd.getLabel());
-		if(cmd.equals(Command.WRITE)) {
-			navigatorEngine.toIddle();
-			writerEngine.startListening();
-		} else execute(cmd);
-	}
-
-	@Override
-	public void onNavigationNumber(String number) {
-		showNotification(number);
-		ArrayList<AccessibilityNodeInfo> response = mBadges
-				.filterBadges(PocketMotrixUtils.numbers.get(number));
-		if (response.size() == 1) {
-			if (isScrolling)
-				scroll(response.get(0), direction);
-			else
-				clickActiveNode(response.get(0));
-		}
-	}
-
-	@Override
-	public void onNavigationError(String errorMessage) {
-		showNotification(errorMessage);
-	}
-
-	@Override
 	public void onSpeakerReady() { 
-		navigatorEngine.setupEngine();
+		navigationController.setup();
 		writerEngine.setupRecognitionEngine();
 	}
 

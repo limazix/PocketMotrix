@@ -192,7 +192,7 @@ public class NavigatorEngine implements RecognitionListener {
 		this.resultText = resultText;
 		String cmd = resultText.replaceAll("\\s", "");
 		if(PocketMotrixUtils.numbers.containsKey(cmd))
-			listener.onNavigationNumber(cmd);
+			listener.onNavigationNumber(PocketMotrixUtils.numbers.get(cmd));
 		else
 			listener.onNavigationCommand(Command.get(cmd));
 	}
