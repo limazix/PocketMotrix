@@ -14,15 +14,16 @@ import android.os.AsyncTask;
 import android.util.Log;
 import br.ufrj.pee.pocketmotrix.listener.NavigationListener;
 import br.ufrj.pee.pocketmotrix.service.Command;
+import br.ufrj.pee.pocketmotrix.util.PocketMotrixUtils;
 import edu.cmu.pocketsphinx.Assets;
 import edu.cmu.pocketsphinx.Hypothesis;
 import edu.cmu.pocketsphinx.RecognitionListener;
 import edu.cmu.pocketsphinx.SpeechRecognizer;
 
 @EBean(scope = Scope.Singleton)
-public class SREngine implements RecognitionListener {
+public class NavigatorEngine implements RecognitionListener {
 
-	private static final String TAG = SREngine_.class.getName();
+	private static final String TAG = NavigatorEngine_.class.getName();
 
 	private static final String KWS_SEARCH = "wakeup";
 	private static final String KEYPHRASE = "start listening";
@@ -190,7 +191,10 @@ public class SREngine implements RecognitionListener {
 	public void setResultText(String resultText) {
 		this.resultText = resultText;
 		String cmd = resultText.replaceAll("\\s", "");
-		listener.onNavigationCommand(Command.get(cmd));
+		if(PocketMotrixUtils.numbers.containsKey(cmd))
+			listener.onNavigationNumber(cmd);
+		else
+			listener.onNavigationCommand(Command.get(cmd));
 	}
 	
 	public void toIddle() {

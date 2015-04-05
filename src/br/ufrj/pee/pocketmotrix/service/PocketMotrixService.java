@@ -2,8 +2,6 @@ package br.ufrj.pee.pocketmotrix.service;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
-import java.util.Observable;
-import java.util.Observer;
 import java.util.Queue;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -19,9 +17,9 @@ import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 import br.ufrj.pee.pocketmotrix.app.PocketMotrixApp;
 import br.ufrj.pee.pocketmotrix.badge.OverlayBadges;
-import br.ufrj.pee.pocketmotrix.engine.WriterEngine;
-import br.ufrj.pee.pocketmotrix.engine.SREngine;
+import br.ufrj.pee.pocketmotrix.engine.NavigatorEngine;
 import br.ufrj.pee.pocketmotrix.engine.SpeakerEngine;
+import br.ufrj.pee.pocketmotrix.engine.WriterEngine;
 import br.ufrj.pee.pocketmotrix.listener.NavigationListener;
 import br.ufrj.pee.pocketmotrix.listener.SpeakerListener;
 import br.ufrj.pee.pocketmotrix.listener.WriterListener;
@@ -41,7 +39,7 @@ public class PocketMotrixService extends AccessibilityService implements
 	private AccessibilityNodeInfo editableField;
 
 	@Bean
-	SREngine mSREngine;
+	NavigatorEngine navigatorEngine;
 	
 	@Bean
 	WriterEngine writerEngine;
@@ -88,7 +86,7 @@ public class PocketMotrixService extends AccessibilityService implements
 
 	@AfterInject
 	public void settingupEngines() {
-		mSREngine.setNavigationListener(this);
+		navigatorEngine.setNavigationListener(this);
 		speakerEngine.setListener(this);
 		writerEngine.setWriterListener(this);
 	}
@@ -340,7 +338,7 @@ public class PocketMotrixService extends AccessibilityService implements
 
 	@Override
 	public void onDestroy() {
-		mSREngine.finishEngine();
+		navigatorEngine.finishEngine();
 		speakerEngine.finishEngine();
 		deactivateBadges();
 	}
@@ -414,7 +412,7 @@ public class PocketMotrixService extends AccessibilityService implements
 	public void onNavigationCommand(Command cmd) {
 		showNotification(cmd.getLabel());
 		if(cmd.equals(Command.WRITE)) {
-			mSREngine.toIddle();
+			navigatorEngine.toIddle();
 			writerEngine.startListening();
 		} else execute(cmd);
 	}
@@ -439,7 +437,7 @@ public class PocketMotrixService extends AccessibilityService implements
 
 	@Override
 	public void onSpeakerReady() { 
-		mSREngine.setupEngine();
+		navigatorEngine.setupEngine();
 		writerEngine.setupRecognitionEngine();
 	}
 
