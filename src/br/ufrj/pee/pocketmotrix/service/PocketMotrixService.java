@@ -19,16 +19,17 @@ import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 import br.ufrj.pee.pocketmotrix.app.PocketMotrixApp;
 import br.ufrj.pee.pocketmotrix.badge.OverlayBadges;
-import br.ufrj.pee.pocketmotrix.engine.GoogleSREngine;
+import br.ufrj.pee.pocketmotrix.engine.WriterEngine;
 import br.ufrj.pee.pocketmotrix.engine.SREngine;
 import br.ufrj.pee.pocketmotrix.engine.SpeakerEngine;
 import br.ufrj.pee.pocketmotrix.listener.NavigationListener;
 import br.ufrj.pee.pocketmotrix.listener.SpeakerListener;
+import br.ufrj.pee.pocketmotrix.listener.WriterListener;
 import br.ufrj.pee.pocketmotrix.util.PocketMotrixUtils;
 
 @EService
 public class PocketMotrixService extends AccessibilityService implements
-		NavigationListener, SpeakerListener, Observer {
+		NavigationListener, SpeakerListener, WriterListener {
 
 	private static final String TAG = PocketMotrixService_.class.getName();
 
@@ -43,7 +44,7 @@ public class PocketMotrixService extends AccessibilityService implements
 	SREngine mSREngine;
 	
 	@Bean
-	GoogleSREngine gSREngine;
+	WriterEngine writerEngine;
 
 	@Bean
 	SpeakerEngine speakerEngine;
@@ -89,7 +90,7 @@ public class PocketMotrixService extends AccessibilityService implements
 	public void settingupEngines() {
 		mSREngine.setNavigationListener(this);
 		speakerEngine.setListener(this);
-		gSREngine.addObserver(this);
+		writerEngine.setWriterListener(this);
 	}
 
 	@Override
@@ -344,15 +345,6 @@ public class PocketMotrixService extends AccessibilityService implements
 		deactivateBadges();
 	}
 
-	@Override
-	public void update(Observable observable, Object data) {
-
-		if (observable instanceof GoogleSREngine) {
-			String text = gSREngine.getMatch();
-			writeText(text);
-		}
-	}
-
 	private void execute(Command cmd) {
 
 		switch (cmd) {
@@ -423,7 +415,7 @@ public class PocketMotrixService extends AccessibilityService implements
 		showNotification(cmd.getLabel());
 		if(cmd.equals(Command.WRITE)) {
 			mSREngine.toIddle();
-			gSREngine.startListening();
+			writerEngine.startListening();
 		} else execute(cmd);
 	}
 
@@ -448,11 +440,33 @@ public class PocketMotrixService extends AccessibilityService implements
 	@Override
 	public void onSpeakerReady() { 
 		mSREngine.setupEngine();
-		gSREngine.setupRecognitionEngine();
+		writerEngine.setupRecognitionEngine();
 	}
 
 	@Override
 	public void onSpeakerError(String errorMessage) {
+		showNotification(errorMessage);
+	}
+
+	@Override
+	public void onWriterReady() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void onWriterStoped() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void onWriteText(String text) {
+		writeText(text);
+	}
+
+	@Override
+	public void onWriterError(String errorMessage) {
 		showNotification(errorMessage);
 	}
 
