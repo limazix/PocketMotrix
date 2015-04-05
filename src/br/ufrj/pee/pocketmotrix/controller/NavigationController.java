@@ -2,39 +2,40 @@ package br.ufrj.pee.pocketmotrix.controller;
 
 import java.util.ArrayList;
 
-import org.androidannotations.annotations.App;
 import org.androidannotations.annotations.Bean;
 import org.androidannotations.annotations.EBean;
 
 import android.accessibilityservice.AccessibilityService;
 import android.view.accessibility.AccessibilityNodeInfo;
-import br.ufrj.pee.pocketmotrix.app.PocketMotrixApp;
+import br.ufrj.pee.pocketmotrix.R;
 import br.ufrj.pee.pocketmotrix.engine.CommanderEngine;
 import br.ufrj.pee.pocketmotrix.listener.NavigationListener;
 import br.ufrj.pee.pocketmotrix.service.Command;
-import br.ufrj.pee.pocketmotrix.service.PocketMotrixService;
 
 @EBean
-public class NavigationController implements NavigationListener {
+public class NavigationController extends AbstractController implements NavigationListener {
 
 	private static final int ARRAY_WITH_ONE_ELEMENT_LENGTH = 1;
 
 	private static final int ARRAY_START_POSITION = 0;
 
-	private PocketMotrixService service;
-
-	@App
-	PocketMotrixApp app;
-	
 	@Bean
 	CommanderEngine commanderEngine;
 	
+	@Override
 	public void setup() {
+		super.setup();
 		commanderEngine.setNavigationListener(this);
 		commanderEngine.setupEngine();
-		service = app.getPocketMotrixService();
 	}
 	
+	@Override
+	public void startEngine() {
+		// TODO Fix engine auto start
+		
+	}
+
+	@Override
 	public void stopEngine() {
 		commanderEngine.finishEngine();
 	}
@@ -94,13 +95,13 @@ public class NavigationController implements NavigationListener {
 	
 	@Override
 	public void onNavigationCommand(Command cmd) {
-		service.showNotification(cmd.getLabel());
+		app.showNotification(cmd.getLabel());
 		execute(cmd);
 	}
 
 	@Override
 	public void onNavigationNumber(String number) {
-		service.showNotification(number);
+		app.showNotification(number);
 		ArrayList<AccessibilityNodeInfo> response = service.filterBadges(number);
 		if (response.size() == ARRAY_WITH_ONE_ELEMENT_LENGTH) {
 			if (service.isScrolling())
@@ -112,12 +113,12 @@ public class NavigationController implements NavigationListener {
 
 	@Override
 	public void onNavigationError(String errorMessage) {
-		service.showNotification(errorMessage);
+		app.showNotification(errorMessage);
 	}
 
 	@Override
 	public void onNavigatorReady() {
-		service.showNotification("Commander is Ready");		
+		app.showNotification(app.getString(R.string.commander_is_ready));		
 	}
 
 }

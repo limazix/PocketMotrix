@@ -67,6 +67,7 @@ public class CommanderEngine implements RecognitionListener {
 					Log.e(TAG, "Failed to init recognizer " + result.getMessage());
 					listener.onNavigationError("");
 				} else {
+					// TODO Remodeling to deactivate auto start
 					switchSearch(KWS_SEARCH);
 					currentSearch = KWS_SEARCH;
 					listener.onNavigatorReady();

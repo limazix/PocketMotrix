@@ -18,4 +18,12 @@
     
     <string name="shield_disconnected">Tecla Shield Disconnected</string>
     
+    <string name="writer_is_ready">Writer is Ready</string>
+    
+    <string name="writer_has_stoped">Writer has stoped</string>
+    
+    <string name="commander_is_ready">Commander is Ready</string>
+    
+    <string name="lang_not_available">Language is not available.</string>
+    
 </resources>

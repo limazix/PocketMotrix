@@ -1,8 +1,7 @@
-package br.ufrj.pee.pocketmotrix.engine;
+package br.ufrj.pee.pocketmotrix.notifier;
 
 import java.util.Locale;
 
-import org.androidannotations.annotations.AfterInject;
 import org.androidannotations.annotations.EBean;
 import org.androidannotations.annotations.EBean.Scope;
 import org.androidannotations.annotations.RootContext;
@@ -11,45 +10,36 @@ import android.content.Context;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.TextToSpeech.OnInitListener;
 import android.util.Log;
+import br.ufrj.pee.pocketmotrix.R;
 import br.ufrj.pee.pocketmotrix.listener.SpeakerListener;
 
 @EBean(scope = Scope.Singleton)
-public class SpeakerEngine implements OnInitListener {
+public class SpeakNotifier extends AbstractNotifier implements OnInitListener {
 
-	private static final String TAG = SpeakerEngine_.class.getName();
+	private static final String TAG = SpeakNotifier_.class.getName();
 	private TextToSpeech mTTS;
-	private Boolean isInitialized = false;
 	
 	private SpeakerListener listener;
 	
 	@RootContext
 	Context context;
 	
-	@AfterInject
-	public void setupEngine() {
-		Log.i(TAG, "Setup");
+	@Override
+	public void setupNotifier() {
 		mTTS = new TextToSpeech(context, this);
 	}
 	
-	@SuppressWarnings("deprecation")
-	public void speakToUser(String msg) {
-		Log.i(TAG, "Speaking: " + msg);
-		if(isInitialized)
-			mTTS.speak(msg, TextToSpeech.QUEUE_ADD, null);
-		else
-			Log.e(TAG, "Not initialized");
-	}
-
 	@Override
 	public void onInit(int status) {
 		Log.i(TAG, "oninit");
 		if (status == TextToSpeech.SUCCESS) {
 			int result = mTTS.setLanguage(Locale.getDefault());
-			if (result == TextToSpeech.LANG_MISSING_DATA
-					|| result == TextToSpeech.LANG_NOT_SUPPORTED) {
-				Log.i(TAG, "Language is not available.");
+			if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+				listener.onSpeakerError(context.getString(R.string.lang_not_available));
+				Log.i(TAG, context.getString(R.string.lang_not_available));
 			} else {
-				setIsInitialized(true);
+				setReady(true);
+				listener.onSpeakerReady();
 			}
 		} else {
 			String errorMessage = "Could not initialize TextToSpeech.";
@@ -58,21 +48,18 @@ public class SpeakerEngine implements OnInitListener {
 		}
 	}
 
-	public Boolean getIsInitialized() {
-		return isInitialized;
-	}
-
-	public void setIsInitialized(Boolean isInitialized) {
-		this.isInitialized = isInitialized;
-		listener.onSpeakerReady();
-	}
-	
 	public void finishEngine() {
 		mTTS.stop();
 	}
 
 	public void setListener(SpeakerListener listener) {
 		this.listener = listener;
+	}
+
+	@SuppressWarnings("deprecation")
+	@Override
+	public void notifyUser(String message) {
+		mTTS.speak(message, TextToSpeech.QUEUE_ADD, null);
 	}
 	
 	

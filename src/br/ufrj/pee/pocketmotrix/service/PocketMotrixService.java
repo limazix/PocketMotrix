@@ -19,11 +19,9 @@ import br.ufrj.pee.pocketmotrix.app.PocketMotrixApp;
 import br.ufrj.pee.pocketmotrix.badge.OverlayBadges;
 import br.ufrj.pee.pocketmotrix.controller.NavigationController;
 import br.ufrj.pee.pocketmotrix.controller.WritingController;
-import br.ufrj.pee.pocketmotrix.engine.SpeakerEngine;
-import br.ufrj.pee.pocketmotrix.listener.SpeakerListener;
 
 @EService
-public class PocketMotrixService extends AccessibilityService implements SpeakerListener {
+public class PocketMotrixService extends AccessibilityService {
 
 	private static final String TAG = PocketMotrixService_.class.getName();
 
@@ -39,9 +37,6 @@ public class PocketMotrixService extends AccessibilityService implements Speaker
 	
 	@Bean
 	WritingController writingController;
-
-	@Bean
-	SpeakerEngine speakerEngine;
 	
 	@App
 	PocketMotrixApp app;
@@ -80,12 +75,13 @@ public class PocketMotrixService extends AccessibilityService implements Speaker
 	public void onServiceConnected() {
 		super.onServiceConnected();
 		activateBadges();
+		navigationController.setup();
+		writingController.setup();
 	}
 
 	@AfterInject
 	public void settingupEngines() {
 		app.setPocketMotrixService(this);
-		speakerEngine.setListener(this);
 	}
 
 	@Override
@@ -367,24 +363,6 @@ public class PocketMotrixService extends AccessibilityService implements Speaker
 
 	public void setDirection(int direction) {
 		this.direction = direction;
-	}
-
-	public void showNotification(String message) {
-		speakerEngine.speakToUser(message);
-		app.setNotificationContentText(message);
-		app.setNotificationTicker(message);
-		app.showNotification();
-	}
-	
-	@Override
-	public void onSpeakerReady() { 
-		navigationController.setup();
-		writingController.setup();
-	}
-
-	@Override
-	public void onSpeakerError(String errorMessage) {
-		showNotification(errorMessage);
 	}
 
 }

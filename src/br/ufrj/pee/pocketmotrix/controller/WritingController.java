@@ -1,35 +1,31 @@
 package br.ufrj.pee.pocketmotrix.controller;
 
-import org.androidannotations.annotations.App;
 import org.androidannotations.annotations.Bean;
 import org.androidannotations.annotations.EBean;
 
-import br.ufrj.pee.pocketmotrix.app.PocketMotrixApp;
+import br.ufrj.pee.pocketmotrix.R;
 import br.ufrj.pee.pocketmotrix.engine.WriterEngine;
 import br.ufrj.pee.pocketmotrix.listener.WriterListener;
-import br.ufrj.pee.pocketmotrix.service.PocketMotrixService;
 
 @EBean
-public class WritingController implements WriterListener {
-
-	private PocketMotrixService service;
-
-	@App
-	PocketMotrixApp app;
+public class WritingController extends AbstractController implements WriterListener {
 
 	@Bean
 	WriterEngine writerEngine;
 	
+	@Override
 	public void setup() {
+		super.setup();
 		writerEngine.setWriterListener(this);
-		service = app.getPocketMotrixService();
 	}
 	
+	@Override
 	public void startEngine() {
 		if(!writerEngine.isActive())
 			writerEngine.startWriter();
 	}
 	
+	@Override
 	public void stopEngine() {
 		if(writerEngine.isActive())
 			writerEngine.stopWriter();
@@ -37,12 +33,12 @@ public class WritingController implements WriterListener {
 	
 	@Override
 	public void onWriterReady() {
-		service.writeText("Writer is Ready");
+		service.writeText(app.getString(R.string.writer_is_ready));
 	}
 
 	@Override
 	public void onWriterStoped() {
-		service.writeText("Writer has stoped");
+		service.writeText(app.getString(R.string.writer_has_stoped));
 	}
 
 	@Override
@@ -52,7 +48,7 @@ public class WritingController implements WriterListener {
 
 	@Override
 	public void onWriterError(String errorMessage) {
-		service.showNotification(errorMessage);
+		app.showNotification(errorMessage);
 	}
 
 }
