@@ -3,6 +3,8 @@ package br.ufrj.pee.pocketmotrix.listener;
 import br.ufrj.pee.pocketmotrix.service.Command;
 
 public interface NavigationListener {
+
+	public void onNavigatorReady();
 	
 	public void onNavigationCommand(Command cmd);
 	

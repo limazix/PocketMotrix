@@ -9,7 +9,7 @@ import org.androidannotations.annotations.EBean;
 import android.accessibilityservice.AccessibilityService;
 import android.view.accessibility.AccessibilityNodeInfo;
 import br.ufrj.pee.pocketmotrix.app.PocketMotrixApp;
-import br.ufrj.pee.pocketmotrix.engine.NavigatorEngine;
+import br.ufrj.pee.pocketmotrix.engine.CommanderEngine;
 import br.ufrj.pee.pocketmotrix.listener.NavigationListener;
 import br.ufrj.pee.pocketmotrix.service.Command;
 import br.ufrj.pee.pocketmotrix.service.PocketMotrixService;
@@ -27,16 +27,16 @@ public class NavigationController implements NavigationListener {
 	PocketMotrixApp app;
 	
 	@Bean
-	NavigatorEngine navigatorEngine;
+	CommanderEngine commanderEngine;
 	
 	public void setup() {
-		navigatorEngine.setNavigationListener(this);
-		navigatorEngine.setupEngine();
+		commanderEngine.setNavigationListener(this);
+		commanderEngine.setupEngine();
 		service = app.getPocketMotrixService();
 	}
 	
 	public void finish() {
-		navigatorEngine.finishEngine();
+		commanderEngine.finishEngine();
 	}
 	
 
@@ -93,7 +93,7 @@ public class NavigationController implements NavigationListener {
 	public void onNavigationCommand(Command cmd) {
 		service.showNotification(cmd.getLabel());
 		if(cmd.equals(Command.WRITE)) {
-			navigatorEngine.toIddle();
+			commanderEngine.toIddle();
 			service.startWrite();
 		} else execute(cmd);
 	}
@@ -113,6 +113,11 @@ public class NavigationController implements NavigationListener {
 	@Override
 	public void onNavigationError(String errorMessage) {
 		service.showNotification(errorMessage);
+	}
+
+	@Override
+	public void onNavigatorReady() {
+		service.showNotification("Commander is Ready");		
 	}
 
 }

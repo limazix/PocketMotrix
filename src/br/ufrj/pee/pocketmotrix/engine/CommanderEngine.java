@@ -21,9 +21,9 @@ import edu.cmu.pocketsphinx.RecognitionListener;
 import edu.cmu.pocketsphinx.SpeechRecognizer;
 
 @EBean(scope = Scope.Singleton)
-public class NavigatorEngine implements RecognitionListener {
+public class CommanderEngine implements RecognitionListener {
 
-	private static final String TAG = NavigatorEngine_.class.getName();
+	private static final String TAG = CommanderEngine_.class.getName();
 
 	private static final String KWS_SEARCH = "wakeup";
 	private static final String KEYPHRASE = "start listening";
@@ -147,10 +147,6 @@ public class NavigatorEngine implements RecognitionListener {
 					.setAcousticModel(new File(modelsDir, "hmm/en-us-ptm"))
 	                .setDictionary(new File(modelsDir, "dict/cmudict-en-us.dict"))
 
-					// To disable logging of raw audio comment out this call
-					// (takes a lot of space on the device)
-	                // .setRawLogDir(assetsDir)
-
 					// Threshold to tune for keyphrase
 					.setKeywordThreshold(1e-40f)
 
@@ -161,13 +157,12 @@ public class NavigatorEngine implements RecognitionListener {
 					.getRecognizer();
 		} catch (IOException e) {
 			Log.e(TAG, e.getMessage());
+			listener.onNavigationError("");
 		}
 		recognizer.addListener(this);
 
-		// Create keyword-activation search.
 		recognizer.addKeyphraseSearch(KWS_SEARCH, KEYPHRASE);
 
-		// Create grammar-based search for selection between demos
 		File navigationGrammar = new File(modelsDir, "grammar/navigation.gram");
 		recognizer.addGrammarSearch(NAVIGATION_SEARCH, navigationGrammar);
 
@@ -175,7 +170,7 @@ public class NavigatorEngine implements RecognitionListener {
 
 	@Override
 	public void onError(Exception error) {
-		listener.onNavigationError(error.getMessage());
+		listener.onNavigationError("");
 		Log.e(TAG, "============" + error.getMessage() + "============");
 	}
 
