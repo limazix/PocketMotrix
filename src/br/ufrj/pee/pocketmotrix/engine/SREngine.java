@@ -4,8 +4,6 @@ import static edu.cmu.pocketsphinx.SpeechRecognizerSetup.defaultSetup;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Observable;
 
 import org.androidannotations.annotations.EBean;
 import org.androidannotations.annotations.EBean.Scope;
@@ -14,14 +12,15 @@ import org.androidannotations.annotations.RootContext;
 import android.content.Context;
 import android.os.AsyncTask;
 import android.util.Log;
-import br.ufrj.pee.pocketmotrix.R;
+import br.ufrj.pee.pocketmotrix.listener.NavigationListener;
+import br.ufrj.pee.pocketmotrix.service.Command;
 import edu.cmu.pocketsphinx.Assets;
 import edu.cmu.pocketsphinx.Hypothesis;
 import edu.cmu.pocketsphinx.RecognitionListener;
 import edu.cmu.pocketsphinx.SpeechRecognizer;
 
 @EBean(scope = Scope.Singleton)
-public class SREngine extends Observable implements RecognitionListener {
+public class SREngine implements RecognitionListener {
 
 	private static final String TAG = SREngine_.class.getName();
 
@@ -29,25 +28,22 @@ public class SREngine extends Observable implements RecognitionListener {
 	private static final String KEYPHRASE = "start listening";
 	private static final String NAVIGATION_SEARCH = "navigation";
 	private static final String DEACTIVATE_SEARCH = "stop listening";
-	private static final String WRITE_SEARCH = "write";
 	
 	private SpeechRecognizer recognizer;
-	private HashMap<String, Integer> captions;
 
+	private NavigationListener listener;
+	
 	private String currentSearch = "";
-	private String captionText = "";
 	private String resultText = "";
 
 	@RootContext
 	Context context;
 
+	public void setNavigationListener(NavigationListener listener) {
+		this.listener = listener;
+	}
+	
 	public void setupEngine() {
-		captions = new HashMap<String, Integer>();
-		captions.put(KWS_SEARCH, R.string.kws_caption);
-		captions.put(NAVIGATION_SEARCH, R.string.navigation_caption);
-
-		Log.i(TAG, "Preparing the recognizer");
-		setCaptionText("Preparing the recognizer");
 
 		new AsyncTask<Void, Void, Exception>() {
 			@Override
@@ -57,6 +53,7 @@ public class SREngine extends Observable implements RecognitionListener {
 					File assetDir = assets.syncAssets();
 					setupRecognizer(assetDir);
 				} catch (IOException e) {
+					listener.onNavigationError("");
 					return e;
 				}
 				return null;
@@ -65,8 +62,7 @@ public class SREngine extends Observable implements RecognitionListener {
 			@Override
 			protected void onPostExecute(Exception result) {
 				if (result != null) {
-					setCaptionText("Failed to init recognizer " + result);
-					Log.e(TAG, "Failed to init recognizer " + result);
+					Log.e(TAG, "Failed to init recognizer " + result.getMessage());
 				} else {
 					switchSearch(KWS_SEARCH);
 					currentSearch = KWS_SEARCH;
@@ -76,7 +72,6 @@ public class SREngine extends Observable implements RecognitionListener {
 	}
 
 	public void finishEngine() {
-		Log.i(TAG, "Shutdown");
 		recognizer.cancel();
 		recognizer.shutdown();
 	}
@@ -94,10 +89,6 @@ public class SREngine extends Observable implements RecognitionListener {
 		} else if (text.equals(KEYPHRASE) || text.contains(NAVIGATION_SEARCH)) {
 			switchSearch(NAVIGATION_SEARCH);
 			currentSearch = NAVIGATION_SEARCH;
-//		} else if (text.equals(WRITE_SEARCH)) {
-//			switchSearch(WRITE_SEARCH);
-//			currentSearch = WRITE_SEARCH;
-//			currentMode = MODE.WRITE;
 		} else
 			Log.i(TAG, "parcial result: [" + currentSearch + "] " + text);
 	}
@@ -183,7 +174,6 @@ public class SREngine extends Observable implements RecognitionListener {
 
 	@Override
 	public void onError(Exception error) {
-		setCaptionText(error.getMessage());
 		Log.e(TAG, "============" + error.getMessage() + "============");
 	}
 
@@ -192,22 +182,14 @@ public class SREngine extends Observable implements RecognitionListener {
 		switchSearch(KWS_SEARCH);
 	}
 
-	public String getCaptionText() {
-		return captionText;
-	}
-
-	public void setCaptionText(String captionText) {
-		this.captionText = captionText;
-	}
-
 	public String getResultText() {
 		return resultText;
 	}
 
 	public void setResultText(String resultText) {
 		this.resultText = resultText;
-		setChanged();
-		notifyObservers(resultText);
+		String cmd = resultText.replaceAll("\\s", "");
+		listener.onNavigationCommand(Command.get(cmd));
 	}
 	
 	public void toIddle() {

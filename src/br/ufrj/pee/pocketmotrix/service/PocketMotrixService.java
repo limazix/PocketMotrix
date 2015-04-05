@@ -1,7 +1,6 @@
 package br.ufrj.pee.pocketmotrix.service;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Observable;
 import java.util.Observer;
@@ -15,7 +14,6 @@ import org.androidannotations.annotations.Bean;
 import org.androidannotations.annotations.EService;
 
 import android.accessibilityservice.AccessibilityService;
-import android.content.Context;
 import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
@@ -24,34 +22,20 @@ import br.ufrj.pee.pocketmotrix.badge.OverlayBadges;
 import br.ufrj.pee.pocketmotrix.engine.GoogleSREngine;
 import br.ufrj.pee.pocketmotrix.engine.SREngine;
 import br.ufrj.pee.pocketmotrix.engine.TTSEngine;
+import br.ufrj.pee.pocketmotrix.listener.NavigationListener;
+import br.ufrj.pee.pocketmotrix.util.PocketMotrixUtils;
 
 @EService
 public class PocketMotrixService extends AccessibilityService implements
-		Observer {
+		NavigationListener, Observer {
 
 	private static final String TAG = PocketMotrixService_.class.getName();
-
-	private final static HashMap<String, String> numbers = new HashMap<String, String>();
-	static {
-		numbers.put("one", "1");
-		numbers.put("two", "2");
-		numbers.put("three", "3");
-		numbers.put("four", "4");
-		numbers.put("five", "5");
-		numbers.put("six", "6");
-		numbers.put("seven", "7");
-		numbers.put("eight", "8");
-		numbers.put("nine", "9");
-		numbers.put("zero", "0");
-	};
 
 	public static enum MODE {
 		IDDLE,
 		NAVIGATION,
 		WRITE
 	};
-	
-	private Context context;
 
 	protected static ReentrantLock mActionLock;
 
@@ -80,9 +64,7 @@ public class PocketMotrixService extends AccessibilityService implements
 
 		mActionLock = new ReentrantLock();
 
-		context = getApplicationContext();
-
-		mBadges = new OverlayBadges(context);
+		mBadges = new OverlayBadges(getApplicationContext());
 		
 	}
 
@@ -110,8 +92,8 @@ public class PocketMotrixService extends AccessibilityService implements
 
 	@AfterInject
 	public void settingupEngines() {
+		mSREngine.setNavigationListener(this);
 		mTTSEngine.addObserver(this);
-		mSREngine.addObserver(this);
 		gSREngine.addObserver(this);
 	}
 
@@ -137,7 +119,7 @@ public class PocketMotrixService extends AccessibilityService implements
 		} else if (event_type == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED) {
 			updateBadgesView(node);
 		} else if (event_type == AccessibilityEvent.TYPE_VIEW_FOCUSED || event_type == AccessibilityEvent.TYPE_VIEW_CLICKED) {
-			if (node.isVisibleToUser() && node.isEditable()) // event.getClassName().equals("android.widget.EditText")
+			if (node.isVisibleToUser() && node.isEditable())
 				editableField = node;
 		}
 
@@ -362,7 +344,6 @@ public class PocketMotrixService extends AccessibilityService implements
 
 	@Override
 	public void onDestroy() {
-		mSREngine.deleteObserver(this);
 		mSREngine.finishEngine();
 		mTTSEngine.deleteObserver(this);
 		mTTSEngine.finishEngine();
@@ -371,40 +352,15 @@ public class PocketMotrixService extends AccessibilityService implements
 
 	@Override
 	public void update(Observable observable, Object data) {
-		if (observable instanceof SREngine) {
 
-			mTTSEngine.speakToUser(mSREngine.getResultText());
-
-			String text = mSREngine.getResultText();
-
-			app.setNotificationTicker(text);
-			app.showNotification();
+//			mTTSEngine.speakToUser(mSREngine.getResultText());
 			
-			if (text.equals("write")) {
-				mSREngine.toIddle();
-				gSREngine.startListening();
-			} else {
-				String cmd = text.replaceAll("\\s", "");
-				if (numbers.containsKey(cmd)) {
-					ArrayList<AccessibilityNodeInfo> response = mBadges
-							.filterBadges(numbers.get(cmd));
-					if (response.size() == 1) {
-						if (isScrolling)
-							scroll(response.get(0), direction);
-						else
-							clickActiveNode(response.get(0));
-					}
-				} else
-					execute(Command.get(cmd));
-			}
-		} else if (observable instanceof GoogleSREngine) {
+		if (observable instanceof GoogleSREngine) {
 			String text = gSREngine.getMatch();
 			writeText(text);
 		} else if (observable instanceof TTSEngine) {
 			if (mTTSEngine.getIsInitialized()) {
-				app.setNotificationContentText("TTS initialized");
-				app.setNotificationTicker("TTS Initialized");
-				app.showNotification();
+				showNotification("TTS initialized");
 				mSREngine.setupEngine();
 				gSREngine.setupRecognitionEngine();
 			}
@@ -467,6 +423,39 @@ public class PocketMotrixService extends AccessibilityService implements
 	@Override
 	public void onInterrupt() {
 
+	}
+
+	private void showNotification(String message) {
+		app.setNotificationContentText(message);
+		app.setNotificationTicker(message);
+		app.showNotification();
+	}
+	
+	@Override
+	public void onNavigationCommand(Command cmd) {
+		showNotification(cmd.getLabel());
+		if(cmd.equals(Command.WRITE)) {
+			mSREngine.toIddle();
+			gSREngine.startListening();
+		} else execute(cmd);
+	}
+
+	@Override
+	public void onNavigationNumber(String number) {
+		showNotification(number);
+		ArrayList<AccessibilityNodeInfo> response = mBadges
+				.filterBadges(PocketMotrixUtils.numbers.get(number));
+		if (response.size() == 1) {
+			if (isScrolling)
+				scroll(response.get(0), direction);
+			else
+				clickActiveNode(response.get(0));
+		}
+	}
+
+	@Override
+	public void onNavigationError(String errorMessage) {
+		showNotification(errorMessage);
 	}
 
 

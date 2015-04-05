@@ -3,6 +3,7 @@ package br.ufrj.pee.pocketmotrix.app;
 import org.androidannotations.annotations.EApplication;
 
 import br.ufrj.pee.pocketmotrix.R;
+import br.ufrj.pee.pocketmotrix.service.PocketMotrixService;
 import android.app.Application;
 import android.app.KeyguardManager;
 import android.app.NotificationManager;
@@ -25,6 +26,8 @@ public class PocketMotrixApp extends Application {
 	private static final String TAG = PocketMotrixApp.class.getName();
 	private static final long MIN_WAKE_TIME = 30000;
 	private static final int NOTIFICATION_DEFAULT_ID = 0;
+	
+	private PocketMotrixService pocketMotrixService;
 	
 	private NotificationManager notificationManager;
 	private ClipboardManager clipboardManager;
@@ -122,6 +125,15 @@ public class PocketMotrixApp extends Application {
 		this.notificationTicker = notificationTicker;
 		notificationBuilder.setTicker(notificationTicker);
 	}
+
+	public PocketMotrixService getPocketMotrixService() {
+		return pocketMotrixService;
+	}
+
+	public void setPocketMotrixService(PocketMotrixService pocketMotrixService) {
+		this.pocketMotrixService = pocketMotrixService;
+	}
+
 
 
 	private BroadcastReceiver mReceiver = new BroadcastReceiver() {
