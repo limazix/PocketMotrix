@@ -17,6 +17,10 @@ import br.ufrj.pee.pocketmotrix.service.PocketMotrixService;
 @EBean
 public class NavigationController implements NavigationListener {
 
+	private static final int ARRAY_WITH_ONE_ELEMENT_LENGTH = 1;
+
+	private static final int ARRAY_START_POSITION = 0;
+
 	private PocketMotrixService service;
 
 	@App
@@ -98,11 +102,11 @@ public class NavigationController implements NavigationListener {
 	public void onNavigationNumber(String number) {
 		service.showNotification(number);
 		ArrayList<AccessibilityNodeInfo> response = service.filterBadges(number);
-		if (response.size() == 1) {
+		if (response.size() == ARRAY_WITH_ONE_ELEMENT_LENGTH) {
 			if (service.isScrolling())
-				service.scroll(response.get(0), service.getDirection());
+				service.scroll(response.get(ARRAY_START_POSITION), service.getDirection());
 			else
-				service.clickActiveNode(response.get(0));
+				service.clickActiveNode(response.get(ARRAY_START_POSITION));
 		}
 	}
 

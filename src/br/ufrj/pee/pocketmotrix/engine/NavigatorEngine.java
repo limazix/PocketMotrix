@@ -54,6 +54,7 @@ public class NavigatorEngine implements RecognitionListener {
 					File assetDir = assets.syncAssets();
 					setupRecognizer(assetDir);
 				} catch (IOException e) {
+					Log.e(TAG, e.getMessage());
 					listener.onNavigationError("");
 					return e;
 				}
@@ -64,6 +65,7 @@ public class NavigatorEngine implements RecognitionListener {
 			protected void onPostExecute(Exception result) {
 				if (result != null) {
 					Log.e(TAG, "Failed to init recognizer " + result.getMessage());
+					listener.onNavigationError(result.getMessage());
 				} else {
 					switchSearch(KWS_SEARCH);
 					currentSearch = KWS_SEARCH;
@@ -91,7 +93,7 @@ public class NavigatorEngine implements RecognitionListener {
 			switchSearch(NAVIGATION_SEARCH);
 			currentSearch = NAVIGATION_SEARCH;
 		} else
-			Log.i(TAG, "parcial result: [" + currentSearch + "] " + text);
+			Log.i(TAG, "[SEARCH] parcial result: [" + currentSearch + "] " + text);
 	}
 
 	@Override
@@ -138,8 +140,6 @@ public class NavigatorEngine implements RecognitionListener {
 	}
 
 	private void setupRecognizer(File assetsDir) {
-		// The recognizer can be configured to perform multiple searches
-		// of different kind and switch between them
 
 		File modelsDir = new File(assetsDir, "models");
 		try {
@@ -149,7 +149,7 @@ public class NavigatorEngine implements RecognitionListener {
 
 					// To disable logging of raw audio comment out this call
 					// (takes a lot of space on the device)
-					.setRawLogDir(assetsDir)
+	                // .setRawLogDir(assetsDir)
 
 					// Threshold to tune for keyphrase
 					.setKeywordThreshold(1e-40f)
