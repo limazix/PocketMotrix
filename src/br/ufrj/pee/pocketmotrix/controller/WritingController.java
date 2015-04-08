@@ -17,6 +17,7 @@ public class WritingController extends AbstractController implements WriterListe
 	public void setup() {
 		super.setup();
 		writerEngine.setWriterListener(this);
+		writerEngine.setupRecognitionEngine();
 	}
 	
 	@Override
@@ -48,6 +49,7 @@ public class WritingController extends AbstractController implements WriterListe
 
 	@Override
 	public void onWriterError(String errorMessage) {
+		writerEngine.stopWriter();
 		app.showNotification(errorMessage);
 	}
 

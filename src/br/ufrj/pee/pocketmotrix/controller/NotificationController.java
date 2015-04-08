@@ -55,7 +55,6 @@ public class NotificationController extends AbstractController implements Runnab
 	}
 	
 	public void addMessage(String message) {
-		Log.d(TAG, "add message: " + message);
 		messages.add(message);
 	}
 	

@@ -69,7 +69,7 @@ public class PocketMotrixApp extends Application {
 	
 	public void wakeupScreen() {
 		keyguardLock.disableKeyguard();
-		wakeLock.acquire(MIN_WAKE_TIME);
+		wakeLock.acquire();
 	}
 	
 	public void releaseLockScreen() {
