@@ -26,4 +26,11 @@
     
     <string name="lang_not_available">Language is not available.</string>
     
+    <string name="pref_group_notification_title">Notification</string>
+    <string name="pref_summary_speaker_notification">Speack notification summary</string>
+    <string name="pref_title_speaker_notification">Speak notification</string>
+    <string name="pref_summary_system_notifier_notification">System Notifier notification summary</string>
+    <string name="pref_title_system_notifier_notification">System Notifier notification</string>
+    
+    
 </resources>
