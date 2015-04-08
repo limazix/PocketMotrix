@@ -103,6 +103,10 @@ public class PocketMotrixApp extends Application {
 		notificationController.addMessage(message);
 	}
 	
+	public NotificationController getNotificationController() {
+		return notificationController;
+	}
+	
 	private BroadcastReceiver mReceiver = new BroadcastReceiver() {
 
 		@Override
