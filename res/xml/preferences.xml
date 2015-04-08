@@ -5,11 +5,11 @@
 
     <PreferenceCategory
         android:title="@string/pref_group_notification_title" >
-        <CheckBoxPreference 
+        <SwitchPreference
             android:key="useSpeakNotifier"
             android:summary="@string/pref_summary_speaker_notification"
             android:title="@string/pref_title_speaker_notification"/>
-        <CheckBoxPreference 
+        <SwitchPreference 
             android:key="useSystemNotifier"
             android:summary="@string/pref_summary_system_notifier_notification"
             android:title="@string/pref_title_system_notifier_notification"/>
