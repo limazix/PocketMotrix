@@ -34,6 +34,9 @@ public class SystemNotifier extends AbstractNotifier {
 		notificationBuilder = new NotificationCompat.Builder(context)
 		.setSmallIcon(R.mipmap.ic_launcher);
 		notifyUser(context.getResources().getString(R.string.app_name));
+
+        setReady(true);
+        getListener().onNotifierReady(this);
 	}
 
 	public String getNotificationTitle() {

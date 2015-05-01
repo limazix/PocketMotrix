@@ -31,6 +31,8 @@
     <string name="pref_title_speaker_notification">Speak notification</string>
     <string name="pref_summary_system_notifier_notification">System Notifier notification summary</string>
     <string name="pref_title_system_notifier_notification">System Notifier notification</string>
-    
+
+    <string name="notifier_speak_lang_not_available">Language is not available</string>
+    <string name="notifier_speak_couldnt_initialize_tts">Could not initialize Text to Speach</string>
     
 </resources>

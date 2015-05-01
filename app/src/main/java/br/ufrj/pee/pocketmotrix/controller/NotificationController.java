@@ -10,14 +10,15 @@ import org.androidannotations.annotations.sharedpreferences.Pref;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.util.Log;
-import br.ufrj.pee.pocketmotrix.listener.SpeakerListener;
+
+import br.ufrj.pee.pocketmotrix.listener.NotifierListener;
 import br.ufrj.pee.pocketmotrix.notifier.AbstractNotifier;
 import br.ufrj.pee.pocketmotrix.notifier.SpeakNotifier;
 import br.ufrj.pee.pocketmotrix.notifier.SystemNotifier;
 import br.ufrj.pee.pocketmotrix.util.PocketMotrixPrefs_;
 
 @EBean
-public class NotificationController extends AbstractController implements Runnable, SpeakerListener, OnSharedPreferenceChangeListener {
+public class NotificationController extends AbstractController implements Runnable, NotifierListener, OnSharedPreferenceChangeListener {
 
 	private static final int MESSAGE_NOTIFICATION_INTERVAL = 100;
 	private static final String TAG = NotificationController_.class.getName();
@@ -33,20 +34,24 @@ public class NotificationController extends AbstractController implements Runnab
 	SpeakNotifier speakNotifier;
 	
 	@Bean
-	SystemNotifier systemNotifier; 
+	SystemNotifier systemNotifier;
 	
 	@Override
 	public void setup() {
 		speakNotifier.setListener(this);
+        systemNotifier.setListener(this);
 	}
 
 	@Override
 	public void startEngine() {
-		speakNotifier.setupNotifier();
-		systemNotifier.setupNotifier();
-		
-		if(prefs.useSystemNotifier().get())
-			addNotifier(systemNotifier);
+
+		if(prefs.useSystemNotifier().get()) {
+            addNotifier(systemNotifier);
+        }
+
+        if(prefs.useSpeakNotifier().get()) {
+            addNotifier(speakNotifier);
+        }
 	}
 
 	@Override
@@ -59,21 +64,24 @@ public class NotificationController extends AbstractController implements Runnab
 	}
 	
 	public void addNotifier(AbstractNotifier notifier) {
-		notifiers.add(notifier);
+        if(!notifiers.contains(notifier)) {
+            if(!notifier.isReady()) {
+                notifier.setupNotifier();
+            } else notifiers.add(notifier);
+        }
 	}
 	
 	public void removeNotifier(AbstractNotifier notifier) {
-		notifiers.remove(notifiers);
+		notifiers.remove(notifier);
 	}
 	
 	@Override
-	public void onSpeakerReady() {
-		if(prefs.useSpeakNotifier().get())
-			addNotifier(speakNotifier);
+	public void onNotifierReady(AbstractNotifier notifier) {
+		notifiers.add(notifier);
 	}
 	
 	@Override
-	public void onSpeakerError(String errorMessage) {
+	public void onNotifierError(String errorMessage) {
 		addMessage(errorMessage);
 	}
 
@@ -96,8 +104,7 @@ public class NotificationController extends AbstractController implements Runnab
 	}
 
 	@Override
-	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
-			String key) {
+	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
 		if(prefs.useSpeakNotifier().key().equals(key)) {
 			if(prefs.useSpeakNotifier().get())
 				addNotifier(speakNotifier);
