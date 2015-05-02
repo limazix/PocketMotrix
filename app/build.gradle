@@ -1,7 +1,7 @@
 apply plugin: 'com.android.application'
 apply plugin: 'android-apt'
 
-def AAVersion = '3.2'
+def AAVersion = '3.3'
 
 buildscript {
     repositories {
@@ -64,4 +64,10 @@ dependencies {
     compile 'com.android.support:appcompat-v7:22.0.0'
     apt "org.androidannotations:androidannotations:${AAVersion}"
     compile "org.androidannotations:androidannotations-api:${AAVersion}"
+}
+
+apt {
+    arguments {
+        androidManifestFile "/home/limazix/AndroidStudioProjects/PocketMotrix/app/src/main/AndroidManifest.xml"
+    }
 }

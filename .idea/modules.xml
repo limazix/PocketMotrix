@@ -5,6 +5,7 @@
       <module fileurl="file://$PROJECT_DIR$/PocketMotrix.iml" filepath="$PROJECT_DIR$/PocketMotrix.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
       <module fileurl="file://$PROJECT_DIR$/pocketsphinx-android/pocketsphinx-android.iml" filepath="$PROJECT_DIR$/pocketsphinx-android/pocketsphinx-android.iml" />
+      <module fileurl="file://$PROJECT_DIR$/pocketsphinx-android-test/pocketsphinx-android-test.iml" filepath="$PROJECT_DIR$/pocketsphinx-android-test/pocketsphinx-android-test.iml" />
     </modules>
   </component>
 </project>

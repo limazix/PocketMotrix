@@ -1,1 +1,1 @@
-include ':app', ':pocketsphinx-android'
+include ':app', ':pocketsphinx-android', ':pocketsphinx-android-test'
