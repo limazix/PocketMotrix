@@ -1,0 +1,74 @@
+apply plugin: 'com.android.application'
+apply plugin: 'android-apt'
+
+def AAVersion = '3.3'
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.neenbedankt.gradle.plugins:android-apt:1.4'
+    }
+}
+
+apt {
+    arguments {
+        androidManifestFile variant.outputs[0].processResources.manifestFile
+        resourcePackageName 'br.ufrj.pee.pocketsphinstest'
+    }
+}
+
+android {
+    compileSdkVersion 22
+    buildToolsVersion "22.0.1"
+
+    defaultConfig {
+        applicationId "br.ufrj.pee.pocketsphinxtest"
+        minSdkVersion 16
+        targetSdkVersion 22
+        versionCode 1
+        versionName "1.0"
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    sourceSets {
+        main.java.srcDirs += 'src/main/java'
+    }
+
+    productFlavors {
+        x86 {
+            ndk {
+                abiFilters("x86", "x86_64")
+            }
+        }
+        mips {
+            ndk {
+                abiFilters("mips", "mips64")
+            }
+        }
+        arm {
+            ndk {
+                abiFilters("armeabi-v7a", "armeabi", "arm64-v8a")
+            }
+        }
+    }
+}
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    compile 'com.android.support:appcompat-v7:22.0.0'
+    apt "org.androidannotations:androidannotations:${AAVersion}"
+    compile "org.androidannotations:androidannotations-api:${AAVersion}"
+}
+
+apt {
+    arguments {
+        androidManifestFile "/home/limazix/AndroidStudioProjects/PocketMotrix/pocketsphinx-android-test/src/main/AndroidManifest.xml"
+    }
+}
