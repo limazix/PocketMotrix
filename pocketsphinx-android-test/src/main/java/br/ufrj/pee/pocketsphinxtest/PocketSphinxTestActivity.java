@@ -5,25 +5,37 @@ import android.support.v7.app.ActionBarActivity;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.github.lzyzsd.circleprogress.ArcProgress;
+
 import net.rdrei.android.dirchooser.DirectoryChooserActivity;
 
 import org.androidannotations.annotations.Click;
 import org.androidannotations.annotations.EActivity;
 import org.androidannotations.annotations.OnActivityResult;
-import org.androidannotations.annotations.OptionsMenu;
 import org.androidannotations.annotations.ViewById;
 
 import br.ufrj.pee.pocketsphinxtest.view.DirectoryPickerView;
 
-@OptionsMenu(R.menu.menu_pocket_sphinx_test)
 @EActivity(R.layout.activity_pocket_sphinx_test)
 public class PocketSphinxTestActivity extends ActionBarActivity {
 
     private static final int REQUEST_DIRECTORY = 0;
+    private static final String DIR_NAME = "DirName";
     private static final String TAG = PocketSphinxTestActivity_.class.getName();
+
+    @ViewById(R.id.progressScenario)
+    ArcProgress progressSenarioView;
+
+    @ViewById(R.id.progressTest)
+    ArcProgress progressTestView;
 
     @ViewById(R.id.directoryPickerBatchFiles)
     DirectoryPickerView directoryPickerBatchFiles;
+
+    @Click(R.id.btnStartStop)
+    void onStartStopButtonClick() {
+        Toast.makeText(this, "Button Clicked", Toast.LENGTH_LONG).show();
+    }
 
     @Click(R.id.directoryPickerBatchFiles)
     void onChoseDirectoryClick() {
@@ -32,7 +44,7 @@ public class PocketSphinxTestActivity extends ActionBarActivity {
                 DirectoryChooserActivity.class
         );
 
-        choserIntent.putExtra(DirectoryChooserActivity.EXTRA_NEW_DIR_NAME, "DirName");
+        choserIntent.putExtra(DirectoryChooserActivity.EXTRA_NEW_DIR_NAME, DIR_NAME);
 
         startActivityForResult(choserIntent, REQUEST_DIRECTORY);
     }

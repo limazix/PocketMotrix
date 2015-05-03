@@ -110,6 +110,7 @@
     <orderEntry type="library" exported="" name="pocketsphinx-android-5prealpha-nolib" level="project" />
     <orderEntry type="library" exported="" name="support-v4-22.0.0" level="project" />
     <orderEntry type="library" exported="" name="support-annotations-22.0.0" level="project" />
+    <orderEntry type="library" exported="" name="circleprogress-1.1.0" level="project" />
     <orderEntry type="library" exported="" name="androidannotations-api-3.3" level="project" />
     <orderEntry type="library" exported="" name="1_androidannotations-api-3.3" level="project" />
     <orderEntry type="library" exported="" name="library-2.1" level="project" />
