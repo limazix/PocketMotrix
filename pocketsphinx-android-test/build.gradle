@@ -65,6 +65,7 @@ dependencies {
     compile 'com.android.support:appcompat-v7:22.0.0'
     apt "org.androidannotations:androidannotations:${AAVersion}"
     compile "org.androidannotations:androidannotations-api:${AAVersion}"
+    compile "net.rdrei.android.dirchooser:library:2.1@aar"
 }
 
 apt {
