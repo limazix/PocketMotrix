@@ -2,6 +2,7 @@ package br.ufrj.pee.pocketsphinxtest;
 
 import android.content.Intent;
 import android.support.v7.app.ActionBarActivity;
+import android.util.Log;
 import android.widget.Toast;
 
 import com.github.lzyzsd.circleprogress.ArcProgress;
@@ -15,6 +16,7 @@ import org.androidannotations.annotations.UiThread;
 import org.androidannotations.annotations.ViewById;
 
 import br.ufrj.pee.pocketsphinxtest.listener.TestProgressListener;
+import br.ufrj.pee.pocketsphinxtest.util.PocketSphinxTestUtil;
 import br.ufrj.pee.pocketsphinxtest.view.DirectoryPickerView;
 
 @EActivity(R.layout.activity_pocket_sphinx_test)
@@ -56,7 +58,9 @@ public class PocketSphinxTestActivity extends ActionBarActivity implements TestP
     @OnActivityResult(REQUEST_DIRECTORY)
     void onResult(int resultCode, Intent data) {
         if(resultCode == DirectoryChooserActivity.RESULT_CODE_DIR_SELECTED) {
-            directoryPickerBatchFiles.setDirectoryPath(data.getStringExtra(DirectoryChooserActivity.RESULT_SELECTED_DIR));
+            String dir = data.getStringExtra(DirectoryChooserActivity.RESULT_SELECTED_DIR);
+            directoryPickerBatchFiles.setDirectoryPath(dir);
+            PocketSphinxTestUtil.buildScenariosFromFile(dir);
         } else {
             Toast.makeText(this, "Nothing Selected", Toast.LENGTH_LONG).show();
         }
@@ -83,11 +87,13 @@ public class PocketSphinxTestActivity extends ActionBarActivity implements TestP
 
     @Override
     public void onScenarioError(String errorMsg) {
+        Log.e(TAG, errorMsg);
         Toast.makeText(this, errorMsg, Toast.LENGTH_LONG).show();
     }
 
     @Override
     public void onError(String errorMsg) {
+        Log.e(TAG, errorMsg);
         Toast.makeText(this, errorMsg, Toast.LENGTH_LONG).show();
     }
 }
