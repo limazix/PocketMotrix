@@ -37,9 +37,11 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.HashSet;
 
+import android.annotation.TargetApi;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder.AudioSource;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
@@ -75,6 +77,7 @@ public class SpeechRecognizer {
      * @param config The configuration object
      * @throws IOException thrown if audio recorder can not be created for some reason.
      */
+    @TargetApi(Build.VERSION_CODES.CUPCAKE)
     protected SpeechRecognizer(Config config) throws IOException {
         decoder = new Decoder(config);
         sampleRate = (int)decoder.getConfig().getFloat("-samprate");
@@ -204,6 +207,7 @@ public class SpeechRecognizer {
     /**
      * Shutdown the recognizer and release the recorder
      */
+    @TargetApi(Build.VERSION_CODES.CUPCAKE)
     public void shutdown() {
         recorder.release();
     }
@@ -306,6 +310,7 @@ public class SpeechRecognizer {
             this(NO_TIMEOUT);
         }
 
+        @TargetApi(Build.VERSION_CODES.CUPCAKE)
         @Override
         public void run() {
 

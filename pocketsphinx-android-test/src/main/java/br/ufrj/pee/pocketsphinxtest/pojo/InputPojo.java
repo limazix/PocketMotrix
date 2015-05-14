@@ -9,15 +9,48 @@ import java.util.Map;
  */
 public class InputPojo {
 
-    @JsonProperty("inputs")
-    private Map<String, String> inputMap;
+    @JsonProperty("floatInputs")
+    private Map<String, Float> floatInputMap;
 
-    public Map<String, String> getInputMap() {
-        return inputMap;
+    @JsonProperty("integerInputs")
+    private Map<String, Integer> integerInputMap;
+
+    @JsonProperty("booleanInputs")
+    private Map<String, Boolean> booleanInputMap;
+
+    @JsonProperty("stringInputs")
+    private Map<String, String> stringInputMap;
+
+    public Map<String, String> getStringInputMap() {
+        return stringInputMap;
     }
 
-    public void setInputMap(Map<String, String> map) {
-        this.inputMap = map;
+    public void setStringInputMap(Map<String, String> map) {
+        this.stringInputMap = map;
+    }
+
+    public Map<String, Integer> getIntegerInputMap() {
+        return integerInputMap;
+    }
+
+    public void setIntegerInputMap(Map<String, Integer> intergerInputMap) {
+        this.integerInputMap = intergerInputMap;
+    }
+
+    public Map<String, Boolean> getBooleanInputMap() {
+        return booleanInputMap;
+    }
+
+    public void setBooleanInputMap(Map<String, Boolean> booleanInputMap) {
+        this.booleanInputMap = booleanInputMap;
+    }
+
+    public Map<String, Float> getFloatInputMap() {
+        return floatInputMap;
+    }
+
+    public void setFloatInputMap(Map<String, Float> floatInputMap) {
+        this.floatInputMap = floatInputMap;
     }
 
     @Override
@@ -26,7 +59,7 @@ public class InputPojo {
 
         sb.append("map={");
 
-        for(Map.Entry<String, String> entry : this.inputMap.entrySet()) {
+        for(Map.Entry<String, String> entry : this.stringInputMap.entrySet()) {
             sb.append("" + entry.getKey() + "=" + entry.getValue());
         }
 
