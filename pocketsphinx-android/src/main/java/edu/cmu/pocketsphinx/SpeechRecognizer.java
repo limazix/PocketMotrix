@@ -36,12 +36,9 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.concurrent.LinkedBlockingQueue;
 
-import android.annotation.TargetApi;
-import android.media.AudioFormat;
-import android.media.AudioRecord;
-import android.media.MediaRecorder.AudioSource;
-import android.os.Build;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
@@ -60,11 +57,13 @@ public class SpeechRecognizer {
     private final Decoder decoder;
 
     private final int sampleRate;        
-    private final static float BUFFER_SIZE_SECONDS = 0.4f;
-    private int bufferSize;
-    private final AudioRecord recorder;
-    
+
     private Thread recognizerThread;
+
+    private Thread audioThread;
+    private MicrophoneAudioSrc microphoneAudioSrc;
+
+    private LinkedBlockingQueue<Bundle> audioQueue = new LinkedBlockingQueue<Bundle>();
 
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     
@@ -77,21 +76,11 @@ public class SpeechRecognizer {
      * @param config The configuration object
      * @throws IOException thrown if audio recorder can not be created for some reason.
      */
-    @TargetApi(Build.VERSION_CODES.CUPCAKE)
     protected SpeechRecognizer(Config config) throws IOException {
         decoder = new Decoder(config);
-        sampleRate = (int)decoder.getConfig().getFloat("-samprate");
-        bufferSize = Math.round(sampleRate * BUFFER_SIZE_SECONDS);
-        recorder = new AudioRecord(
-                AudioSource.VOICE_RECOGNITION, sampleRate,
-                AudioFormat.CHANNEL_IN_MONO,
-                AudioFormat.ENCODING_PCM_16BIT, bufferSize * 2);
-
-        if (recorder.getState() == AudioRecord.STATE_UNINITIALIZED) {
-            recorder.release();
-            throw new IOException(
-                    "Failed to initialize recorder. Microphone might be already in use.");
-        }
+        sampleRate = (int)decoder.getConfig().getFloat(SpeechRecognizerConstantsUtil.CONFIG_SEMPLE_RATE_FLAG);
+        microphoneAudioSrc = new MicrophoneAudioSrc(sampleRate);
+        microphoneAudioSrc.setAudioQueue(audioQueue);
     }
 
     /**
@@ -160,6 +149,12 @@ public class SpeechRecognizer {
         }
 
         recognizerThread = null;
+
+        if(microphoneAudioSrc != null) {
+            microphoneAudioSrc.stop();
+            audioThread = null;
+        }
+
         return true;
     }
 
@@ -207,9 +202,9 @@ public class SpeechRecognizer {
     /**
      * Shutdown the recognizer and release the recorder
      */
-    @TargetApi(Build.VERSION_CODES.CUPCAKE)
     public void shutdown() {
-        recorder.release();
+        if(microphoneAudioSrc != null)
+            microphoneAudioSrc.shutDown();
     }
     
     /**
@@ -310,43 +305,38 @@ public class SpeechRecognizer {
             this(NO_TIMEOUT);
         }
 
-        @TargetApi(Build.VERSION_CODES.CUPCAKE)
         @Override
         public void run() {
 
-            recorder.startRecording();
-            if (recorder.getRecordingState() == AudioRecord.RECORDSTATE_STOPPED) {
-                recorder.stop();
-                IOException ioe = new IOException(
-                        "Failed to start recording. Microphone might be already in use.");
-                mainHandler.post(new OnErrorEvent(ioe));
-                return;
+            if(audioThread == null || !audioThread.isAlive()) {
+                microphoneAudioSrc.reset();
+                audioThread = new Thread(microphoneAudioSrc);
+                audioThread.start();
+            } else {
+                microphoneAudioSrc.startRecorder();
             }
 
-            Log.d(TAG, "Starting decoding");
+            //mainHandler.post(new OnErrorEvent(ioe));
 
             decoder.startUtt();
-            short[] buffer = new short[bufferSize];
             boolean inSpeech = decoder.getInSpeech();
-
-            // Skip the first buffer, usually zeroes
-            recorder.read(buffer, 0, buffer.length);
 
             while (!interrupted()
                     && ((timeoutSamples == NO_TIMEOUT) || (remainingSamples > 0))) {
-                int nread = recorder.read(buffer, 0, buffer.length);
+
+                assert microphoneAudioSrc != null;
+
+                Bundle audioData = audioQueue.poll();
+                if(audioData == null) continue;
+
+                int nread = audioData.getInt(SpeechRecognizerConstantsUtil.BUNDLE_AUDIO_NREAD);
+                short[] buffer = audioData.getShortArray(SpeechRecognizerConstantsUtil.BUNDLE_AUDIO_BUFFER);
 
                 if (-1 == nread) {
                     throw new RuntimeException("error reading audio buffer");
                 } else if (nread > 0) {
                     decoder.processRaw(buffer, nread, false, false);
 
-                    // int max = 0;
-                    // for (int i = 0; i < nread; i++) {
-                    //     max = Math.max(max, Math.abs(buffer[i]));
-                    // }
-                    // Log.e("!!!!!!!!", "Level: " + max);
-                    
                     if (decoder.getInSpeech() != inSpeech) {
                         inSpeech = decoder.getInSpeech();
                         mainHandler.post(new InSpeechChangeEvent(inSpeech));
@@ -364,7 +354,6 @@ public class SpeechRecognizer {
                 }
             }
 
-            recorder.stop();
             decoder.endUtt();
 
             // Remove all pending notifications.
